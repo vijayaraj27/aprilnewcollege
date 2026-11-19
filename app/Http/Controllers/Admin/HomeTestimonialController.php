@@ -48,7 +48,7 @@ class HomeTestimonialController extends Controller
         // Get home page testimonials (department_id = 0)
         $data['rows'] = Testimonial::where('language_id', Language::version()->id)
                                  ->where('department_id', 0)
-                                 ->orderby('id', 'desc')
+                                 ->orderby('id', 'asc')
                                  ->get();
 
         return view($this->view.'.index', $data);

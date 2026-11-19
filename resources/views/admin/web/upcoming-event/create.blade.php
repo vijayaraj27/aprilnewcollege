@@ -14,13 +14,18 @@
                         <h5>{{ __('modal_add') }} {{ $title }}</h5>
                     </div>
                     <div class="card-block">
-                        <a href="{{ route($route.'.index') }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> {{ __('btn_back') }}</a>
+                        <a href="{{ route($route.'.index', $filter ?? []) }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> {{ __('btn_back') }}</a>
 
-                        <a href="{{ route($route.'.create') }}" class="btn btn-info"><i class="fas fa-sync-alt"></i> {{ __('btn_refresh') }}</a>
+                        <a href="{{ route($route.'.create', $filter ?? []) }}" class="btn btn-info"><i class="fas fa-sync-alt"></i> {{ __('btn_refresh') }}</a>
                     </div>
 
                     <form class="needs-validation" novalidate action="{{ route($route.'.store') }}" method="post" enctype="multipart/form-data">
                     @csrf
+                    @if(array_key_exists('department_id', $filter ?? []))
+                    <input type="hidden" name="department_id" value="{{ $filter['department_id'] }}">
+                    @elseif(!empty($selected_department_id))
+                    <input type="hidden" name="department_id" value="{{ $selected_department_id }}">
+                    @endif
                     <div class="card-block">
                       <div class="row">
                         <!-- Form Start -->
@@ -30,22 +35,6 @@
 
                             <div class="invalid-feedback">
                               {{ __('required_field') }} {{ __('field_title') }}
-                            </div>
-                        </div>
-
-                        <div class="form-group col-md-4">
-                            <label for="department_id">Department <span>*</span></label>
-                            <select class="form-control" name="department_id" id="department_id">
-                                <option value="home">Home Page</option>
-                                @foreach($departments as $department)
-                                    <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
-                                        {{ $department->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-
-                            <div class="invalid-feedback">
-                              {{ __('required_field') }} Department
                             </div>
                         </div>
 
@@ -77,12 +66,9 @@
                         </div>
 
                         <div class="form-group col-md-6">
-                            <label for="link">External Link</label>
-                            <input type="url" class="form-control" name="link" id="link" value="{{ old('link') }}" placeholder="https://example.com">
-
-                            <div class="invalid-feedback">
-                              Please enter a valid URL
-                            </div>
+                            <label for="link">PDF / Link</label>
+                            <input type="text" class="form-control" name="link" id="link" value="{{ old('link') }}" placeholder="https://example.com/file.pdf">
+                            <small class="form-text text-muted">Paste a PDF URL or any external link</small>
                         </div>
 
                         <div class="form-group col-md-6">

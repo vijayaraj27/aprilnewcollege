@@ -4,20 +4,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Traits\FileUploader;
 use App\Models\Web\Research;
+use App\Models\Web\ResearchItem;
 use Auth;
 use Toastr;
 
 class ResearchController extends Controller
 {
     use FileUploader;
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+
     public function __construct()
     {
-        // Module Data
         $this->title    = trans_choice('Research', 1);
         $this->route    = 'admin.research';
         $this->view     = 'admin.web.research';
@@ -25,67 +21,51 @@ class ResearchController extends Controller
         $this->access   = 'research';
         $this->middleware('permission:'.$this->access.'-view');
     }
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
 
-     public function index()
-        {
-            $data['title']  = $this->title;
-            $data['route']  = $this->route;
-            $data['view']   = $this->view;
-            $data['path']   = $this->path;
-            $data['access'] = $this->access;
-            $data['baseurl'] = config('app.url');
+    public function index()
+    {
+        $data['title']  = $this->title;
+        $data['route']  = $this->route;
+        $data['view']   = $this->view;
+        $data['path']   = $this->path;
+        $data['access'] = $this->access;
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
+        $data['research'] = Research::all();
 
-            $data['research'] = Research::all(); // Example: Fetch all publications.
-
-            return view($this->view.'.index', $data);
-        }
-
+        return view($this->view.'.index', $data);
+    }
 
     public function show($slug)
     {
         $result = explode('_', $slug);
         $departmentId = $result[0];
-        $section= $result[1];
+        $section = $result[1] ?? 'basic';
 
-       // echo $section." 123456 ";
+        if (isset(ResearchItem::SECTION_TYPE_MAP[$section])) {
+            return redirect()->route('admin.research-item.index', [
+                'department_id' => $departmentId,
+                'type' => ResearchItem::SECTION_TYPE_MAP[$section],
+            ]);
+        }
 
         $data['title']  = $this->title;
         $data['route']  = $this->route;
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['departmentId'] = $departmentId;
         $data['section'] = $section;
 
         $query = Research::query();
         $query->where('departmentId', $departmentId);
-        $data['row'] =  $query->first();       
-        
-            $data['record'] = isset($data['row']['record']) && is_string($data['row']['record']) 
-            ? array_values(json_decode($data['row']['record'], true) ?? []) 
-            : [];
-
-            //record
-
+        $data['row'] = $query->first();
 
         return view($this->view.'.index', $data);
     }
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request, $departmentId = null)
     {
- 
-        // Check if the row exists with the given departmentId
         $Research = Research::where('departmentId', $request->departmentId)->first();
 
         if (Auth::user()->department_id != 0 && $request->departmentId != Auth::user()->department_id) {
@@ -102,100 +82,25 @@ class ResearchController extends Controller
             $message = 'Record created successfully';
         }
 
-      //  print_r($request); exit;
-
-        if($request->section === 'basic'){
-            
-            if ($request->hasFile('imageFile')) {            
-                $Research->imageFile = $this->uploadImage($request, 'imageFile', $this->path, null, 800);                 
+        if ($request->section === 'basic') {
+            if ($request->hasFile('imageFile')) {
+                $Research->imageFile = $this->uploadImage($request, 'imageFile', $this->path, null, 800);
             }
-            
             $Research->title = $request->title;
-            $Research->description = $request->description;            
-
-        }else if($request->section === 'sectionAbout'){
-            if ($request->hasFile('imageFile2')) {            
-                $Research->imageFile2 = $this->uploadImage($request, 'imageFile2', $this->path, null, 800);                 
+            $Research->description = $request->description;
+        } elseif ($request->section === 'sectionAbout') {
+            if ($request->hasFile('imageFile2')) {
+                $Research->imageFile2 = $this->uploadImage($request, 'imageFile2', $this->path, null, 800);
             }
-            
             $Research->title2 = $request->title2;
-            $Research->description2 = $request->description2;  
-        }else if($request->section === 'phd'){
-            $Research->phdHoldersList = json_encode($request->phdHoldersList, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'anna-university'){
-            $Research->annaUniversityRecognizedSuperviorsNameList = json_encode($request->annaUniversityRecognizedSuperviorsNameList, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'pursuing-phd'){
-            $Research->ListOfCandidatesPursuingPhdUnderDepartmentSupervisors = json_encode($request->ListOfCandidatesPursuingPhdUnderDepartmentSupervisors, JSON_UNESCAPED_UNICODE);
-        }else if ($request->section === 'faculties-pursuing-phd') {
-            $Research->listOfDepartmentFacultiesPursuingPhd = json_encode($request->ListOfDepartmentFacultiesPursuingPhd, JSON_UNESCAPED_UNICODE); 
-        }
-        else if($request->section === 'phd-awarded'){
-            $Research->phdAwardedUnderDepartmentSupervisor = json_encode($request->phdAwardedUnderDepartmentSupervisor, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'supervisor'){
-            $Research->supervisor = json_encode($request->supervisor, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'funds'){
-            // Get data and process to ensure ALL entries are captured
-            $fundsData = $request->input('funds', []);
-            
-            // Handle JSON string if needed
-            if (is_string($fundsData) && !empty($fundsData)) {
-                $decoded = json_decode($fundsData, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $fundsData = $decoded;
-                }
-            }
-            
-            // Process and normalize
-            $processedData = [];
-            if (is_array($fundsData) && !empty($fundsData)) {
-                foreach (array_values($fundsData) as $yearData) {
-                    if (is_array($yearData) && isset($yearData['year']) && !empty(trim($yearData['year']))) {
-                        $yearEntry = [
-                            'year' => trim($yearData['year']),
-                            'fundDetails' => []
-                        ];
-                        
-                        if (isset($yearData['fundDetails']) && is_array($yearData['fundDetails'])) {
-                            foreach (array_values($yearData['fundDetails']) as $fundDetail) {
-                                if (is_array($fundDetail)) {
-                                    $nameOfPi = isset($fundDetail['nameOfPi']) ? trim($fundDetail['nameOfPi']) : '';
-                                    $titleOfTheProject = isset($fundDetail['titleOfTheProject']) ? trim($fundDetail['titleOfTheProject']) : '';
-                                    $amount = isset($fundDetail['amount']) ? trim($fundDetail['amount']) : '';
-                                    $fundingAgency = isset($fundDetail['fundingAgency']) ? trim($fundDetail['fundingAgency']) : '';
-                                    $OrderNoAndDate = isset($fundDetail['OrderNoAndDate']) ? trim($fundDetail['OrderNoAndDate']) : '';
-                                    $status = isset($fundDetail['status']) ? trim($fundDetail['status']) : '';
-                                    
-                                    if (!empty($nameOfPi) || !empty($titleOfTheProject) || !empty($amount) || !empty($fundingAgency) || !empty($OrderNoAndDate) || !empty($status)) {
-                                        $yearEntry['fundDetails'][] = [
-                                            'nameOfPi' => $nameOfPi,
-                                            'titleOfTheProject' => $titleOfTheProject,
-                                            'amount' => $amount,
-                                            'fundingAgency' => $fundingAgency,
-                                            'OrderNoAndDate' => $OrderNoAndDate,
-                                            'status' => $status
-                                        ];
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if (!empty($yearEntry['fundDetails'])) {
-                            $processedData[] = $yearEntry;
-                        }
-                    }
-                }
-            }
-            
-            $Research->funds = json_encode($processedData, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'value-added-group'){
-            $Research->valueAddedGroup = json_encode($request->valueAddedGroup, JSON_UNESCAPED_UNICODE);
-        }     
-        
- 
-            $Research->save();
-            Toastr::success(__($message), __('msg_success'));
+            $Research->description2 = $request->description2;
+        } else {
+            Toastr::error(__('These research items are managed from the Research Item CRUD pages.'), __('msg_error'));
             return redirect()->back();
-  
-        //return redirect()->back();
+        }
+
+        $Research->save();
+        Toastr::success(__($message), __('msg_success'));
+        return redirect()->back();
     }
 }

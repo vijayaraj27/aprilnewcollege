@@ -40,6 +40,7 @@
     <!-- RTL css -->
     <link rel="stylesheet" href="{{ asset('web/css/rtl.css') }}">
     @endif
+    @stack('styles')
  </head>
  <body>
  	<!-- header -->
@@ -368,94 +369,113 @@
             </div>
           </div>         
  	<!-- footer -->
-    <footer class="footer-bg footer-p pt-90" style="background-color: #125875;">
-        <div class="footer-top pb-70">
+    @php
+        $footerLinkItems = collect();
+        if (!empty($footerMenus) && $footerMenus->count()) {
+            foreach ($footerMenus->where('parent_id', 0) as $footerMenu) {
+                $resolved = isset($menuController)
+                    ? $menuController->resolveMenuLink($footerMenu, $footerMenus)
+                    : ['url' => '#', 'external' => false];
+                $footerLinkItems->push([
+                    'label' => $footerMenu->menu,
+                    'url' => $resolved['url'] ?? '#',
+                    'external' => !empty($resolved['external']),
+                ]);
+            }
+        } else {
+            $footerLinkItems = collect([
+                ['label' => 'Home', 'url' => url('/'), 'external' => false],
+                ['label' => 'Administration', 'url' => url('/administration'), 'external' => false],
+                ['label' => 'Department', 'url' => url('/department'), 'external' => false],
+                ['label' => 'Admission', 'url' => url('/admission'), 'external' => false],
+                ['label' => 'Mandatory Disclosure', 'url' => url('/mandatory-disclosure'), 'external' => false],
+                ['label' => 'Help Desk', 'url' => url('/help-desk'), 'external' => false],
+                ['label' => 'Resources', 'url' => url('/resources'), 'external' => false],
+                ['label' => 'Placement', 'url' => url('/placement'), 'external' => false],
+                ['label' => 'Research', 'url' => url('/research'), 'external' => false],
+                ['label' => 'Alumni', 'url' => url('/alumni'), 'external' => false],
+                ['label' => 'Student Council', 'url' => url('/student-council'), 'external' => false],
+                ['label' => 'Contact', 'url' => url('/contact'), 'external' => false],
+                ['label' => 'Careers', 'url' => url('/careers'), 'external' => false],
+                ['label' => 'Achievements', 'url' => url('/achievements'), 'external' => false],
+                ['label' => 'Audit Statement', 'url' => url('/audit-statement'), 'external' => false],
+                ['label' => 'Gallery', 'url' => url('/gallery'), 'external' => false],
+                ['label' => 'Rules and Regulations', 'url' => url('/rules-and-regulations'), 'external' => false],
+                ['label' => 'Privacy Policy', 'url' => url('/privacy-policy'), 'external' => false],
+                ['label' => 'Cookie Policy', 'url' => url('/cookie-policy'), 'external' => false],
+            ]);
+        }
+        $footerColumns = $footerLinkItems->chunk(max(1, (int) ceil($footerLinkItems->count() / 5)));
+        $footerPhone = $topbarSetting->phone ?? '80125 31321 / 80125 31323 / 80125 31325';
+        $footerEmail = $topbarSetting->email ?? 'contact@psr.edu.in';
+        $footerAddress = $topbarSetting->address ?? 'Sevalpatti, Sivakasi - 626140. Virudhunagar (Dist), Tamil Nadu, India.';
+        $footerYear = date('Y');
+    @endphp
+    <footer class="footer-bg footer-p psr-site-footer" style="background-color: #125875;">
+        <div class="footer-top pb-40 pt-50">
             <div class="container">
-                <div class="row justify-content-between">
-                    <div class="col-xl-4 col-lg-4 col-sm-12">
+                <div class="row footer-link-columns">
+                    @foreach($footerColumns as $column)
+                    <div class="col-6 col-md-4 col-lg">
                         <div class="footer-widget mb-30">
-                            <div class="f-widget-title">
-                                <h2>{{ __('footer_socials') }}</h2>
-                            </div>
-                            <div class="footer-social mt-10">                                    
-                                @if(isset($socialSetting->facebook))
-                                <a href="{{ $socialSetting->facebook }}" target="_blank"><i class="fab fa-facebook-f"></i></a>
-                                @endif
-                                @if(isset($socialSetting->instagram))
-                                <a href="{{ $socialSetting->instagram }}" target="_blank"><i class="fab fa-instagram"></i></a>
-                                @endif
-                                @if(isset($socialSetting->twitter))
-                                <a href="{{ $socialSetting->twitter }}" target="_blank"><i class="fab fa-twitter"></i></a>
-                                @endif
-                                @if(isset($socialSetting->linkedin))
-                                <a href="{{ $socialSetting->linkedin }}" target="_blank"><i class="fab fa-linkedin-in"></i></a>
-                                @endif
-                                @if(isset($socialSetting->pinterest))
-                                <a href="{{ $socialSetting->pinterest }}" target="_blank"><i class="fab fa-pinterest"></i></a>
-                                @endif
-                                @if(isset($socialSetting->youtube))
-                                <a href="{{ $socialSetting->youtube }}" target="_blank"><i class="fab fa-youtube"></i></a>
-                                @endif
-                            </div>    
-                        </div>
-                    </div>
-                    <div class="col-xl-4 col-lg-4 col-sm-6">
-                        <div class="footer-widget mb-30">
-                            <div class="f-widget-title">
-                                <h2>{{ __('footer_links') }}</h2>
-                            </div>
                             <div class="footer-link">
                                 <ul>
-                                    @if (Route::has('student.login'))
-                                    <!-- <li><a href="{{ route('student.login') }}" target="_blank">{{ __('field_student') }} {{ __('field_login') }}</a></li> -->
-                                    @endif
-                                    @if (Route::has('login'))
-                                    <li><a href="{{ route('login') }}" target="_blank">{{ __('field_staff') }} {{ __('field_login') }}</a></li>
-                                    @endif
-                                    @php 
-                                    $application = App\Models\ApplicationSetting::status(); 
-                                    @endphp
-                                    @isset($application)
-                                    <li><a href="{{ route('application.index') }}" target="_blank">{{ __('navbar_admission') }}</a></li>
-                                    @endisset
-                                   
-                                   {{--     @foreach($footer_pages as $footer_page)
-                                    @foreach($footer_pages as $footer_page)
-                                    <!-- <li><a href="{{ route('page.single', ['slug' => $footer_page->slug]) }}">{{ $footer_page->title }}</a></li> -->
-                                    @endforeach --}}
-
-
+                                    @foreach($column as $item)
+                                    <li>
+                                        <a href="{{ $item['url'] }}"
+                                           @if(!empty($item['external'])) target="_blank" rel="noopener noreferrer" @endif>
+                                            {{ $item['label'] }}
+                                        </a>
+                                    </li>
+                                    @endforeach
                                 </ul>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-4 col-lg-4 col-sm-6">
-                        <div class="footer-widget mb-30">
-                            <div class="f-widget-title">
-                                <h2>{{ __('footer_contact') }}</h2>
+                    @endforeach
+                </div>
+
+                <div class="row align-items-start footer-brand-row pt-20">
+                    <div class="col-lg-5 col-md-12 mb-30">
+                        <div class="footer-brand">
+                            @if(isset($setting) && !empty($setting->logo_path))
+                            <div class="footer-brand-logo-wrap">
+                                <img src="{{ asset('/uploads/setting/'.$setting->logo_path) }}" alt="{{ $setting->title ?? 'PSR Engineering College' }}" class="footer-brand-logo">
                             </div>
-                            <div class="f-contact">
-                                <ul>
-                                    @isset($topbarSetting->phone)
-                                    <li>
-                                        <i class="icon fal fa-phone"></i>
-                                        <span><a href="tel:{{ str_replace(' ', '', $topbarSetting->phone ?? '') }}">{{ $topbarSetting->phone ?? '' }}</a></span>
-                                    </li>
-                                    @endisset
-                                    @isset($topbarSetting->email)
-                                    <li>
-                                        <i class="icon fal fa-envelope"></i>
-                                        <span><a href="mailto:{{ $topbarSetting->email ?? '' }}">{{ $topbarSetting->email ?? '' }}</a></span>
-                                    </li>
-                                    @endisset
-                                    @isset($topbarSetting->address)
-                                    <li>
-                                        <i class="icon fal fa-map-marker-check"></i>
-                                        <span>{{ $topbarSetting->address ?? '' }}</span>
-                                    </li>
-                                    @endisset
-                                </ul>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-30">
+                        <div class="footer-address">
+                            <strong>P.S.R.ENGINEERING COLLEGE</strong><br>
+                            {!! nl2br(e($footerAddress)) !!}
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 mb-30">
+                        <div class="footer-contact-block">
+                            <p><strong>Phone:</strong> {{ $footerPhone }}</p>
+                            <p><strong>Fax:</strong> 04562-239284 / 04562-225261</p>
+                            <p><strong>Transport:</strong> 98949 12162</p>
+                            <p><strong>E-Mail:</strong> <a href="mailto:{{ $footerEmail }}">{{ $footerEmail }}</a></p>
+                            @if(isset($socialSetting))
+                            <div class="footer-social mt-15">
+                                @if(!empty($socialSetting->facebook))
+                                <a href="{{ $socialSetting->facebook }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i></a>
+                                @endif
+                                @if(!empty($socialSetting->instagram))
+                                <a href="{{ $socialSetting->instagram }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+                                @endif
+                                @if(!empty($socialSetting->twitter))
+                                <a href="{{ $socialSetting->twitter }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-twitter"></i></a>
+                                @endif
+                                @if(!empty($socialSetting->linkedin))
+                                <a href="{{ $socialSetting->linkedin }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin-in"></i></a>
+                                @endif
+                                @if(!empty($socialSetting->youtube))
+                                <a href="{{ $socialSetting->youtube }}" target="_blank" rel="noopener noreferrer"><i class="fab fa-youtube"></i></a>
+                                @endif
                             </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -464,19 +484,56 @@
         <div class="copyright-wrap">
             <div class="container">
                 <div class="row align-items-center">
-                    <div class="col-lg-4 col-md-4 col-12">
+                    <div class="col-lg-8 col-md-8 col-12 mb-2 mb-md-0">
+                        <ul class="footer-legal-links">
+                            <li><a href="{{ url('/privacy-policy') }}">Privacy Policy</a></li>
+                            <li><a href="{{ url('/cookie-policy') }}">Cookie Policy</a></li>
+                            <li><a href="{{ url('/sitemap') }}">Sitemap</a></li>
+                            <li>&copy; PSR-{{ $footerYear }}</li>
+                        </ul>
                     </div>
-                    <div class="col-lg-4 col-md-4 col-12 text-center">    
-                        @isset($setting->copyright_text)
-                        &copy; {!! strip_tags($setting->copyright_text, '<a><b><i><u><strong>') !!}
-                        @endisset      
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-12 text-center text-md-right">
+                    <div class="col-lg-4 col-md-4 col-12 text-md-end text-center">
+                        Powered by
+                        <a href="https://saivanajagroup.in" target="_blank" rel="noopener noreferrer">Sai Vanaja group</a>
                     </div>
                 </div>
             </div>
         </div>
     </footer>
+    <style>
+        .psr-site-footer { color: #fff; }
+        .psr-site-footer a { color: #fff; }
+        .psr-site-footer .footer-link ul { list-style: none; margin: 0; padding: 0; }
+        .psr-site-footer .footer-link li { margin: 0 0 8px; }
+        .psr-site-footer .footer-link a { text-decoration: none; font-size: 14px; opacity: .95; }
+        .psr-site-footer .footer-link a:hover { opacity: 1; text-decoration: underline; }
+        .psr-site-footer .footer-brand-logo-wrap {
+            display: inline-block;
+            background: #fff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            line-height: 0;
+        }
+        .psr-site-footer .footer-brand-logo {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .psr-site-footer .footer-address,
+        .psr-site-footer .footer-contact-block p { color: #fff; margin: 0 0 6px; font-size: 14px; line-height: 1.5; }
+        .psr-site-footer .footer-contact-block a { color: #fff; text-decoration: underline; }
+        .psr-site-footer .copyright-wrap { border-top: 1px solid rgba(255,255,255,.2); padding: 14px 0; background: rgba(0,0,0,.15); }
+        .psr-site-footer .footer-legal-links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+        .psr-site-footer .footer-legal-links li { margin: 0; position: relative; }
+        .psr-site-footer .footer-legal-links a { color: #fff; text-decoration: none; }
+        .psr-site-footer .footer-legal-links a:hover { text-decoration: underline; }
+        .psr-site-footer .footer-social a { display: inline-flex; width: 32px; height: 32px; align-items: center; justify-content: center; margin-right: 6px; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; }
+        @media (max-width: 767px) {
+            .psr-site-footer .footer-brand { margin-bottom: 10px; }
+            .psr-site-footer .footer-brand-logo { width: 100%; }
+        }
+    </style>
     <!-- footer-end -->
  	<!-- Script JS -->
  	<script src="{{ asset('web/js/vendor/modernizr-3.5.0.min.js') }}"></script>
@@ -536,5 +593,6 @@
     });
 });
     </script>
+    @stack('scripts')
  </body>
 </html>

@@ -48,7 +48,7 @@ class HomeController extends Controller
         $data['testimonials'] = Testimonial::where('language_id', Language::version()->id)
                             ->where('status', '1')
                             ->where('department_id', '0')
-                            ->orderBy('id', 'desc')
+                            ->orderBy('id', 'asc')
                             ->get();
         
         // Upcoming Events (Home Page only - where department_id is NULL)

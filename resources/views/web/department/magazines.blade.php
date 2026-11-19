@@ -4,12 +4,8 @@
 @section('page-description', 'Department Magazines and Publications')
 
 @section('main-content')
-</div>
-
-        <!-- Main Content -->
-        <div class="col-lg-9 col-md-8">
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -34,24 +30,10 @@
         @endif
 
         <!-- Magazines List -->
-        @if(!empty($data->magazines))
         @php
-            $magazines = is_string($data->magazines) ? json_decode($data->magazines, true) : $data->magazines;
-            // Sort by year in descending order (newest first) - handles multiple records
-            if (is_array($magazines) && count($magazines) > 0) {
-                usort($magazines, function($a, $b) {
-                    $yearA = isset($a['year']) && !empty($a['year']) ? (string)$a['year'] : '0000';
-                    $yearB = isset($b['year']) && !empty($b['year']) ? (string)$b['year'] : '0000';
-                    // Extract first year from formats like "2023-24" or "2020-21"
-                    preg_match('/(\d{4})/', $yearA, $matchA);
-                    preg_match('/(\d{4})/', $yearB, $matchB);
-                    $numA = isset($matchA[1]) ? (int)$matchA[1] : 0;
-                    $numB = isset($matchB[1]) ? (int)$matchB[1] : 0;
-                    return $numB - $numA; // Descending order (newest first)
-                });
-            }
+            $magazines = is_array($magazines ?? null) ? $magazines : [];
         @endphp
-        @if(is_array($magazines) && count($magazines) > 0)
+        @if(count($magazines) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="magazines-section">
@@ -89,7 +71,6 @@
                 </div>
             </div>
         </div>
-        @endif
         @endif
 
         <!-- Magazine Details -->
@@ -139,7 +120,7 @@
         @endif
 
         <!-- No Data Message -->
-        @if(empty($data->magazines) && empty($data->magazineDetails))
+        @if(count($magazines) === 0 && empty($data->magazineDetails))
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">
@@ -156,7 +137,26 @@
 
 @push('styles')
 <style>
-/* Page-specific styles can be added here */
+.magazines-section .download-btn,
+.magazine-item .download-btn,
+.detail-item .download-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    width: auto !important;
+    max-width: none;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    font-weight: 600;
+    line-height: 1.2 !important;
+    border-radius: 4px !important;
+    white-space: nowrap;
+}
+.magazines-section .download-btn i,
+.magazine-item .download-btn i,
+.detail-item .download-btn i {
+    font-size: 13px;
+}
 </style>
 @endpush
 

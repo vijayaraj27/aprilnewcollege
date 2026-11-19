@@ -6,7 +6,7 @@
 @section('main-content')
 <!-- Activities Section -->
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -31,9 +31,8 @@
         @endif
 
         <!-- Department Activities -->
-        @if(!empty($data->departmentActivity))
         @php
-            $departmentActivities = is_string($data->departmentActivity) ? json_decode($data->departmentActivity, true) : $data->departmentActivity;
+            $departmentActivities = is_array($departmentActivity ?? null) ? $departmentActivity : [];
             // Sort by year in descending order (newest first) - handles multiple years and multiple records per year
             if (is_array($departmentActivities) && count($departmentActivities) > 0) {
                 usort($departmentActivities, function($a, $b) {
@@ -103,12 +102,10 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Student Participation -->
-        @if(!empty($data->studentParticipation))
         @php
-            $studentParticipation = is_string($data->studentParticipation) ? json_decode($data->studentParticipation, true) : $data->studentParticipation;
+            $studentParticipation = is_array($studentParticipation ?? null) ? $studentParticipation : [];
             // Sort by year in descending order (newest first) - handles multiple years and multiple records per year
             if (is_array($studentParticipation) && count($studentParticipation) > 0) {
                 usort($studentParticipation, function($a, $b) {
@@ -179,12 +176,10 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Inter Institute Events Winning Prize -->
-        @if(!empty($data->interInstituteEventsWinningPrize))
         @php
-            $winningEvents = is_string($data->interInstituteEventsWinningPrize) ? json_decode($data->interInstituteEventsWinningPrize, true) : $data->interInstituteEventsWinningPrize;
+            $winningEvents = is_array($interInstituteEventsWinningPrize ?? null) ? $interInstituteEventsWinningPrize : [];
             // Sort by year in descending order (newest first) - handles multiple years and multiple records per year
             if (is_array($winningEvents) && count($winningEvents) > 0) {
                 usort($winningEvents, function($a, $b) {
@@ -259,12 +254,10 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Industrial Visits -->
-        @if(!empty($data->industrialVisit))
         @php
-            $industrialVisits = is_string($data->industrialVisit) ? json_decode($data->industrialVisit, true) : $data->industrialVisit;
+            $industrialVisits = is_array($industrialVisit ?? null) ? $industrialVisit : [];
         @endphp
         @if(is_array($industrialVisits) && count($industrialVisits) > 0)
         <div class="row mb-5">
@@ -308,10 +301,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- No Data Message -->
-        @if(empty($data->departmentActivity) && empty($data->studentParticipation) && empty($data->interInstituteEventsWinningPrize) && empty($data->industrialVisit))
+        @if(empty($departmentActivities) && empty($studentParticipation) && empty($winningEvents) && empty($industrialVisits))
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">

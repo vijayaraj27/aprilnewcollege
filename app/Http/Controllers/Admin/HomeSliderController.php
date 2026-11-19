@@ -74,7 +74,7 @@ class HomeSliderController extends Controller
     {
         //Field Validation
         $request->validate([
-            'title' => 'required|unique:sliders,title',
+            'title' => 'required|string|max:255',
             'button_link' => 'nullable|url',
             'attach' => 'required|image',
         ]);
@@ -124,7 +124,7 @@ class HomeSliderController extends Controller
     {
         //Field Validation
         $request->validate([
-            'title' => 'required|unique:sliders,title,'.$slider->id,
+            'title' => 'required|string|max:255',
             'button_link' => 'nullable|url',
             'attach' => 'nullable|image',
         ]);

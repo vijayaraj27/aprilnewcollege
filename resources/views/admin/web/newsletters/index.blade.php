@@ -8,12 +8,11 @@
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
-                    @if($section === 'basic')
+                    @if(($section ?? 'basic') === 'basic')
                     <div class="card-header">
                         <h3 class="bold">Section Newsletter</h3>
                     </div>
 
-                    <!-- Department NewsletterSection Main Section -->
                     <div class="card-block">
                         <form id="newslettersForm" class="needs-validation" method="POST"
                             action="{{ route($route . '.store', ['departmentId' => $departmentId, 'section' => $section]) }}"
@@ -45,137 +44,11 @@
                         </form>
                     </div>
                     @endif
-
-
-                    @if($section === 'newsletters')
-                    <!-- Newsletter Materials List -->
-                    <div class="card-header">
-                        <h3 class="bold">Newsletter List</h3>
-                    </div>
-                    <div class="card-block">
-                        <form id="studentPlacedForm" class="needs-validation" method="POST"
-                            action="{{ route($route . '.store', ['departmentId' => $departmentId, 'section' => $section]) }}">
-                            @csrf
-                            <div class="row">
-                                <!-- Newsletter List Section -->
-                                <div id="studentPlacedContainer" class="col-md-12">
-                                    <h4>Newsletter List</h4>
-                                    @php
-                                    // Use the already decoded data from controller
-                                    // Note: $newslettersList is already decoded in controller
-                                    $newslettersList = $newslettersList ?? [];
-                                    $newslettersList = array_values($newslettersList ?? []);
-
-                                    // print_r($newslettersList);
-
-                                    @endphp
-
-
-
-                                    <div class="student-achievement-appreciation-year-entry mb-4"
-                                        id="studentPlacedYearEntry">
-                                        <div class="year-appreciations-container">
-                                            @if(!empty($newslettersList))
-                                            @foreach($newslettersList as $index => $newsletters)
-                                            <div class="student-achievement-appreciation-entry row mb-2"
-                                                id="studentAchievementAppreciationEntry_{{ $index }}">
-                                                @foreach(['year' => 'Year (Format: 2023-24)', 'pdfLink' => 'PDF Link'] as $key => $placeholder)
-                                                <div class="form-group col-md-4">
-                                                    @if($key === 'year')
-                                                    <label for="newsletterYear_{{ $index }}">Year <small class="text-muted">(Format: 2023-24 or 2020-21)</small></label>
-                                                    <input type="text" class="form-control" id="newsletterYear_{{ $index }}"
-                                                        name="newsletters[{{ $index }}][{{ $key }}]"
-                                                        placeholder="e.g., 2023-24"
-                                                        value="{{ $newsletters[$key] ?? '' }}" required>
-                                                    <small class="form-text text-muted">Please use format: YYYY-YY (e.g., 2023-24, 2020-21)</small>
-                                                    @else
-                                                    <label for="newsletterLink_{{ $index }}">{{ $placeholder }}</label>
-                                                    <input type="text" class="form-control" id="newsletterLink_{{ $index }}"
-                                                        name="newsletters[{{ $index }}][{{ $key }}]"
-                                                        placeholder="{{ $placeholder }}"
-                                                        value="{{ $newsletters[$key] ?? '' }}" required>
-                                                    @endif
-                                                </div>
-                                                @endforeach
-                                                <div class="form-group col-md-2 text-end">
-                                                    <button type="button" class="btn btn-danger"
-                                                        onclick="removeAchievementAppreciation(this)">Remove</button>
-                                                </div>
-                                            </div>
-                                            @endforeach
-                                            @endif
-                                        </div>
-
-                                        <!-- Add NewsletterLink Button (Visible Always) -->
-                                        <div class="text-end">
-                                            <button type="button" class="btn btn-info"
-                                                onclick="addAchievementAppreciation(this)"><i class="fa fa-plus"></i>
-                                                Add NewsletterLink</button>
-                                        </div>
-                                    </div>
-                                    @if(empty($newslettersList))
-                                    <div class="alert alert-info">
-                                        <p>No newsletters found.
-                                            Please add a new one.</p>
-                                    </div>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-success">Save Newsletter
-                                    list </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <script>
-                    function addAchievementAppreciation(button) {
-                        const container = document.querySelector('.year-appreciations-container');
-                        if (!container) {
-                            alert('Container for Newsletter Link is missing.');
-                            return;
-                        }
-
-                        // Calculate new index dynamically
-                        const appreciationIndex = [...container.querySelectorAll(
-                            '.student-achievement-appreciation-entry')].length;
-
-                        const newAchievement = `
-                            <div class="student-achievement-appreciation-entry row mb-2" id="studentAchievementAppreciationEntry_${appreciationIndex}">
-                                <div class="form-group col-md-4">
-                                    <label>Year <small class="text-muted">(Format: 2023-24 or 2020-21)</small></label>
-                                    <input type="text" class="form-control" name="newsletters[${appreciationIndex}][year]" placeholder="e.g., 2023-24" required>
-                                    <small class="form-text text-muted">Please use format: YYYY-YY (e.g., 2023-24, 2020-21)</small>
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label>PDF Link</label>
-                                    <input type="text" class="form-control" name="newsletters[${appreciationIndex}][pdfLink]" placeholder="PDF Link" required>
-                                </div>
-                                <div class="form-group col-md-2 text-end">
-                                    <button type="button" class="btn btn-danger" onclick="removeAchievementAppreciation(this)">Remove</button>
-                                </div>
-                            </div>`;
-                        container.insertAdjacentHTML('beforeend', newAchievement);
-                    }
-
-
-
-                    // Remove an achievement
-                    function removeAchievementAppreciation(button) {
-                        if (confirm('Are you sure you want to remove this entry?')) {
-                            button.closest('.student-achievement-appreciation-entry').remove();
-                        }
-                    }
-                    </script>
-                    @endif
-
-
                 </div>
             </div>
         </div>
     </div>
 </div>
 <!-- End Content-->
-
 
 @endsection

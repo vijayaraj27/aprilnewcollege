@@ -9,7 +9,7 @@
         <!-- Main Content -->
         <div class="col-lg-9 col-md-8">
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -34,24 +34,10 @@
         @endif
 
         <!-- Newsletters List -->
-        @if(!empty($data->newsletter))
         @php
-            $newsletters = is_string($data->newsletter) ? json_decode($data->newsletter, true) : $data->newsletter;
-            // Sort by year in descending order (newest first) - handles multiple records
-            if (is_array($newsletters) && count($newsletters) > 0) {
-                usort($newsletters, function($a, $b) {
-                    $yearA = isset($a['year']) && !empty($a['year']) ? (string)$a['year'] : '0000';
-                    $yearB = isset($b['year']) && !empty($b['year']) ? (string)$b['year'] : '0000';
-                    // Extract first year from formats like "2023-24" or "2020-21"
-                    preg_match('/(\d{4})/', $yearA, $matchA);
-                    preg_match('/(\d{4})/', $yearB, $matchB);
-                    $numA = isset($matchA[1]) ? (int)$matchA[1] : 0;
-                    $numB = isset($matchB[1]) ? (int)$matchB[1] : 0;
-                    return $numB - $numA; // Descending order (newest first)
-                });
-            }
+            $newsletters = is_array($newsletter ?? null) ? $newsletter : [];
         @endphp
-        @if(is_array($newsletters) && count($newsletters) > 0)
+        @if(count($newsletters) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="newsletters-section">
@@ -89,7 +75,6 @@
                 </div>
             </div>
         </div>
-        @endif
         @endif
 
         <!-- Newsletter Details -->
@@ -139,7 +124,7 @@
         @endif
 
         <!-- No Data Message -->
-        @if(empty($data->newsletter) && empty($data->newsletterDetails))
+        @if(count($newsletters) === 0 && empty($data->newsletterDetails))
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">
@@ -156,7 +141,23 @@
 
 @push('styles')
 <style>
-/* Page-specific styles can be added here */
+.newsletters-section .download-btn {
+    display: inline-block;
+    width: auto !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    white-space: nowrap;
+}
+.newsletters-section .download-btn i {
+    margin-left: 0 !important;
+    margin-right: 6px;
+    font-size: 12px !important;
+}
+.newsletters-section .newsletter-download,
+.newsletters-section .detail-download {
+    margin-top: 10px;
+}
 </style>
 @endpush
 

@@ -6,7 +6,7 @@
 @section('main-content')
 <!-- Courses Section -->
 <section class="py-5 bg-light">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -287,10 +287,10 @@
                                 </h4>
                                 @if(!empty($course['pdfLink']))
                                 <div class="course-material-link">
-                                    <a href="{{ $course['pdfLink'] }}" 
-                                       target="_blank" 
-                                       class="btn btn-primary btn-sm w-100">
-                                        <i class="fas fa-external-link-alt me-2"></i> View Course Material
+                                    <a href="{{ $course['pdfLink'] }}"
+                                       target="_blank"
+                                       class="btn btn-primary course-material-btn">
+                                        <i class="fas fa-external-link-alt"></i> View Course Material
                                     </a>
                                 </div>
                                 @endif
@@ -323,7 +323,22 @@
 
 @push('styles')
 <style>
-/* Page-specific styles can be added here */
+.course-materials-section .course-material-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    width: auto !important;
+    max-width: none;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    font-weight: 600;
+    line-height: 1.2 !important;
+    border-radius: 4px !important;
+    white-space: nowrap;
+}
+.course-materials-section .course-material-btn i {
+    font-size: 13px;
+}
 </style>
 @endpush
 

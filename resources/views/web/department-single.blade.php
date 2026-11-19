@@ -34,7 +34,8 @@
                         <x-web.quick-navigation 
                             title="Details"
                             :items="[
-                                ['title' => __('field_faculty'), 'url' => url('/department/' . $department->slug . '/about')],
+                                ['title' => 'About', 'url' => url('/department/' . $department->slug . '/about')],
+                                ['title' => 'Faculty', 'url' => url('/department/' . $department->slug . '/faculties')],
                                 ['title' => 'Infrastructure', 'url' => url('/department/' . $department->slug . '/infrastructures')],
                                 ['title' => 'Achievements', 'url' => url('/department/' . $department->slug . '/achievements')],
                                 ['title' => 'Placement', 'url' => url('/department/' . $department->slug . '/placements')],

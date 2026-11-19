@@ -83,8 +83,8 @@
     <!-- @var_dump($about) -->
     <!-- about-area -->
     <section class="about-area about-p pt-120 pb-120 p-relative fix" style="background: #eff7ff;">
-        <div class="animations-02"><img src="{{ asset('web/img/bg/an-img-02.png') }}" alt="About"></div>
-        <div class="container">
+        <div class="animations-02"><img src="{{ asset('web/img/bg/an-img-02.png') }}" alt=""></div>
+        <div class="container" style="position:relative;z-index:1;">
             <div class="row justify-content-center align-items-center">
                 <div class="col-lg-6 col-md-12 col-sm-12">
                     <div class="s-about-img p-relative wow fadeInLeft animated" data-animation="fadeInLeft"
@@ -201,7 +201,7 @@
         <div class="container bgparallax-effect d-flex flex-wrap justify-content-center">
             <div class="row align-items-center ">
                 <div class="col-lg-12 section-2 with-bg p-5 h-auto  pt-120 pb-120">
-                    <a href="#specific" class="btn btn-rounded with-border">PSR Replacement Cell</a>
+                    <a href="{{ url('/placement') }}" class="btn btn-rounded with-border">PSR Placement Cell</a>
                 </div>
             </div>
         </div>
@@ -325,7 +325,7 @@
                         </p>
                         <div class="mb-2 wow scrolling-box animated fadeInLeft" data-animation="fadeInLeft"
                             data-delay="900" style="animation-duration: 1000ms;">
-                            <a href="#specific" class="btn btn-rounded with-border">PSR Replacement Cell</a>
+                            <a href="{{ url('/placement') }}" class="btn btn-rounded with-border">PSR Placement Cell</a>
                         </div>
                     </div>
                 </div>
@@ -495,12 +495,14 @@
                                 <img src="{{ asset('web/img/testimonial/qt-icon.png') }}" alt="img">
                             </div>
                             <p>{!! $testimonial->description !!}</p>
-                            <div class="testi-author">
-                                <img src="{{ asset('uploads/testimonial/'.$testimonial->attach) }}" alt="img">
-                            </div>
-                            <div class="ta-info">
-                                <h6>{{ $testimonial->name }}</h6>
-                                <span>{{ $testimonial->designation ?? '' }}</span>
+                            <div class="testi-footer">
+                                <div class="testi-author">
+                                    <img src="{{ asset('uploads/testimonial/'.$testimonial->attach) }}" alt="{{ $testimonial->name }}">
+                                </div>
+                                <div class="ta-info">
+                                    <h6>{{ $testimonial->name }}</h6>
+                                    <span>{{ $testimonial->designation ?? '' }}</span>
+                                </div>
                             </div>
                         </div>
                         @endforeach

@@ -9,7 +9,7 @@
         <!-- Main Content -->
         <div class="col-lg-9 col-md-8">
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -63,11 +63,10 @@
         @endif
 
         <!-- Library Records -->
-        @if(!empty($data->record))
         @php
-            $records = is_string($data->record) ? json_decode($data->record, true) : $data->record;
+            $records = is_array($record ?? null) ? $record : [];
         @endphp
-        @if(is_array($records) && count($records) > 0)
+        @if(count($records) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="library-section">
@@ -101,7 +100,6 @@
                 </div>
             </div>
         </div>
-        @endif
         @endif
 
         <!-- Library Details -->
@@ -149,7 +147,7 @@
         @endif
 
         <!-- No Data Message -->
-        @if(empty($data->record) && empty($data->libraryDetails) && empty($data->title2) && empty($data->description2))
+        @if(count($records) === 0 && empty($data->libraryDetails) && empty($data->title2) && empty($data->description2))
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">

@@ -4,20 +4,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Traits\FileUploader;
 use App\Models\Web\Magazines;
-use App\Models\Language;
+use App\Models\Web\MagazineItem;
 use Toastr;
 use Auth;
 class MagazinesController extends Controller
 {
     use FileUploader;
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+
     public function __construct()
     {
-        // Module Data
         $this->title    = trans_choice('Magazines', 1);
         $this->route    = 'admin.magazines';
         $this->view     = 'admin.web.magazines';
@@ -25,65 +20,51 @@ class MagazinesController extends Controller
         $this->access   = 'magazines';
         $this->middleware('permission:'.$this->access.'-view');
     }
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
 
-     public function index()
-        {
-            $data['title']  = $this->title;
-            $data['route']  = $this->route;
-            $data['view']   = $this->view;
-            $data['path']   = $this->path;
-            $data['access'] = $this->access;
-            $data['baseurl'] = config('app.url');
+    public function index()
+    {
+        $data['title']  = $this->title;
+        $data['route']  = $this->route;
+        $data['view']   = $this->view;
+        $data['path']   = $this->path;
+        $data['access'] = $this->access;
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
+        $data['magazines'] = Magazines::all();
 
-            $data['magazines'] = Magazines::all(); // Example: Fetch all magazines.
-
-            return view($this->view.'.index', $data);
-        }
-
+        return view($this->view.'.index', $data);
+    }
 
     public function show($slug)
     {
         $result = explode('_', $slug);
         $departmentId = $result[0];
-        $section= $result[1];
+        $section = $result[1] ?? 'basic';
 
-       // echo $section." 123456 ";
+        if (isset(MagazineItem::SECTION_TYPE_MAP[$section])) {
+            return redirect()->route('admin.magazine-item.index', [
+                'department_id' => $departmentId,
+                'type' => MagazineItem::SECTION_TYPE_MAP[$section],
+            ]);
+        }
 
         $data['title']  = $this->title;
         $data['route']  = $this->route;
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['departmentId'] = $departmentId;
         $data['section'] = $section;
 
         $query = Magazines::query();
         $query->where('departmentId', $departmentId);
-        $data['row'] =  $query->first();       
-        
-            $data['magazinesList'] = isset($data['row']['magazines']) && is_string($data['row']['magazines']) 
-            ? array_values(json_decode($data['row']['magazines'], true) ?? []) 
-            : [];
-
+        $data['row'] = $query->first();
 
         return view($this->view.'.index', $data);
     }
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request, $departmentId = null)
     {
- 
-        // Check if the row exists with the given departmentId
         $Magazines = Magazines::where('departmentId', $request->departmentId)->first();
 
         if (Auth::user()->department_id != 0 && $request->departmentId != Auth::user()->department_id) {
@@ -100,18 +81,17 @@ class MagazinesController extends Controller
             $message = 'Record created successfully';
         }
 
-        if($request->section === 'basic'){
-            //echo "Two "; exit;
-            // Handle the image upload if the file exists
-            if ($request->hasFile('imageFile')) {            
-                $Magazines->imageFile = $this->uploadImage($request, 'imageFile', $this->path, null, 800);                 
+        if ($request->section === 'basic') {
+            if ($request->hasFile('imageFile')) {
+                $Magazines->imageFile = $this->uploadImage($request, 'imageFile', $this->path, null, 800);
             }
-
             $Magazines->title = $request->title;
-            $Magazines->description = $request->description;            
-        }else if($request->section === 'magazines'){
-            $Magazines->magazines = json_encode($request->magazines, JSON_UNESCAPED_UNICODE);
-        }       
+            $Magazines->description = $request->description;
+        } else {
+            Toastr::error(__('These magazines are managed from the Magazine Item CRUD pages.'), __('msg_error'));
+            return redirect()->back();
+        }
+
         $Magazines->save();
         Toastr::success(__($message), __('msg_success'));
         return redirect()->back();

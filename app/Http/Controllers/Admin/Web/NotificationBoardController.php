@@ -3,39 +3,31 @@
 namespace App\Http\Controllers\Admin\Web;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Web\NotificationBoard;
 use App\Models\Department;
+use App\Models\Web\NotificationBoard;
 use App\Traits\FileUploader;
+use Auth;
+use Illuminate\Http\Request;
 use Toastr;
 
 class NotificationBoardController extends Controller
 {
     use FileUploader;
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
-        // Module Data
-        $this->title   = 'Notification';
-        $this->route   = 'admin.notification-board';
-        $this->view    = 'admin.web.notification-board';
-        $this->path    = 'notification-board';
-        $this->access  = 'notification-board';
+        $this->title  = 'Notification';
+        $this->route  = 'admin.notification-board';
+        $this->view   = 'admin.web.notification-board';
+        $this->path   = 'notification-board';
+        $this->access = 'notification-board';
 
-        $this->middleware('permission:'.$this->access.'-view|'.$this->access.'-create|'.$this->access.'-edit|'.$this->access.'-delete', ['only' => ['index','show']]);
-        $this->middleware('permission:'.$this->access.'-create', ['only' => ['create','store']]);
-        $this->middleware('permission:'.$this->access.'-edit', ['only' => ['edit','update']]);
+        $this->middleware('permission:'.$this->access.'-view|'.$this->access.'-create|'.$this->access.'-edit|'.$this->access.'-delete', ['only' => ['index', 'show']]);
+        $this->middleware('permission:'.$this->access.'-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:'.$this->access.'-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:'.$this->access.'-delete', ['only' => ['destroy']]);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $data['title']  = $this->title;
@@ -44,75 +36,78 @@ class NotificationBoardController extends Controller
         $data['path']   = $this->path;
         $data['access'] = $this->access;
 
+        $departmentId = $this->resolveScopedDepartmentId($request);
+        $data['filter'] = array_filter([
+            'department_id' => $departmentId,
+        ], fn ($value) => $value !== null && $value !== '');
+
         $query = NotificationBoard::query();
 
-        // Filter by department (NULL for home page, ID for specific department)
-        if ($request->has('department_id')) {
-            if ($request->department_id === 'home') {
+        if (Auth::user()->is_admin == '1') {
+            if ($departmentId === 'home') {
                 $query->whereNull('department_id');
-            } else {
-                $query->where('department_id', $request->department_id);
+                $data['selected_department_label'] = 'Home Page';
+            } elseif ($departmentId) {
+                $query->where('department_id', $departmentId);
+                $data['selected_department'] = Department::find($departmentId);
             }
+        } else {
+            $query->where('department_id', Auth::user()->department_id);
+            $data['filter']['department_id'] = Auth::user()->department_id;
+            $data['selected_department'] = Department::find(Auth::user()->department_id);
         }
 
-        $data['rows'] = $query->with('department')->orderBy('notification_date', 'desc')->get();
-        $data['departments'] = Department::where('status', 1)->orderBy('title')->get();
+        $data['rows'] = $query->orderBy('notification_date', 'desc')->orderBy('display_order', 'asc')->get();
 
         return view($this->view.'.index', $data);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(Request $request)
     {
+        $departmentId = $this->resolveScopedDepartmentId($request);
+
         $data['title']  = $this->title;
         $data['route']  = $this->route;
         $data['view']   = $this->view;
         $data['access'] = $this->access;
-        $data['departments'] = Department::where('status', 1)->orderBy('title')->get();
+        $data['filter'] = array_filter([
+            'department_id' => $departmentId,
+        ], fn ($value) => $value !== null && $value !== '');
+        $data['selected_department_id'] = $departmentId === 'home' ? null : $departmentId;
 
         return view($this->view.'.create', $data);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        // Field Validation
         $request->validate([
             'title' => 'required|max:191',
             'notification_date' => 'required|date',
-            'department_id' => 'nullable|exists:departments,id',
+            'link' => 'nullable|string|max:2000',
+            'department_id' => 'nullable',
         ]);
 
-        // File upload
-        if($request->hasFile('attach')){
-            $file = $this->uploadFile($request, 'attach', $this->path, null, null, 5120); // 5MB max
+        if ($request->hasFile('attach')) {
+            $file = $this->uploadFile($request, 'attach', $this->path, null, null, 5120);
         }
 
-        // Insert Data
         $notification = new NotificationBoard;
-        $notification->department_id = $request->department_id === 'home' ? null : $request->department_id;
+        $notification->department_id = $this->storeDepartmentId($request);
         $notification->title = $request->title;
         $notification->description = $request->description;
         $notification->notification_date = $request->notification_date;
         $notification->link = $request->link;
         $notification->attach = $file ?? null;
         $notification->is_new = $request->is_new ?? 0;
-        $notification->status = $request->status;
+        $notification->status = $request->status ?? 1;
         $notification->display_order = $request->display_order ?? 0;
         $notification->save();
 
         Toastr::success(__('msg_created_successfully'), __('msg_success'));
 
-        return redirect()->route($this->route.'.index');
+        return redirect()->route($this->route.'.index', $this->redirectParams($request, $notification->department_id));
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(NotificationBoard $notificationBoard)
     {
         $data['title']  = $this->title;
@@ -124,10 +119,7 @@ class NotificationBoardController extends Controller
         return view($this->view.'.show', $data);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(NotificationBoard $notificationBoard)
+    public function edit(Request $request, NotificationBoard $notificationBoard)
     {
         $data['title']  = $this->title;
         $data['route']  = $this->route;
@@ -135,58 +127,87 @@ class NotificationBoardController extends Controller
         $data['path']   = $this->path;
         $data['access'] = $this->access;
         $data['row']    = $notificationBoard;
-        $data['departments'] = Department::where('status', 1)->orderBy('title')->get();
+        $data['filter'] = $this->redirectParams($request, $notificationBoard->department_id);
+        $data['selected_department_id'] = $notificationBoard->department_id;
 
         return view($this->view.'.edit', $data);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, NotificationBoard $notificationBoard)
     {
-        // Field Validation
         $request->validate([
             'title' => 'required|max:191',
             'notification_date' => 'required|date',
-            'department_id' => 'nullable|exists:departments,id',
+            'link' => 'nullable|string|max:2000',
+            'status' => 'nullable|in:0,1',
         ]);
 
-        // File upload
-        if($request->hasFile('attach')){
+        if ($request->hasFile('attach')) {
             $file = $this->uploadFile($request, 'attach', $this->path, null, null, 5120);
             $this->removeFile('uploads/'.$this->path.'/', $notificationBoard->attach);
         }
 
-        // Update Data
-        $notificationBoard->department_id = $request->department_id === 'home' ? null : $request->department_id;
+        // Keep existing department; do not change via form dropdown.
         $notificationBoard->title = $request->title;
         $notificationBoard->description = $request->description;
         $notificationBoard->notification_date = $request->notification_date;
         $notificationBoard->link = $request->link;
         $notificationBoard->attach = $file ?? $notificationBoard->attach;
         $notificationBoard->is_new = $request->is_new ?? 0;
-        $notificationBoard->status = $request->status;
+        $notificationBoard->status = $request->status ?? $notificationBoard->status;
         $notificationBoard->display_order = $request->display_order ?? 0;
         $notificationBoard->save();
 
         Toastr::success(__('msg_updated_successfully'), __('msg_success'));
 
-        return redirect()->route($this->route.'.index');
+        return redirect()->route($this->route.'.index', $this->redirectParams($request, $notificationBoard->department_id));
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(NotificationBoard $notificationBoard)
+    public function destroy(Request $request, NotificationBoard $notificationBoard)
     {
-        // Delete Data
+        $filter = $this->redirectParams($request, $notificationBoard->department_id);
         $this->removeFile('uploads/'.$this->path.'/', $notificationBoard->attach);
         $notificationBoard->delete();
 
         Toastr::success(__('msg_deleted_successfully'), __('msg_success'));
 
-        return redirect()->back();
+        return redirect()->route($this->route.'.index', $filter);
+    }
+
+    protected function resolveScopedDepartmentId(Request $request)
+    {
+        if (Auth::user()->is_admin != '1') {
+            return Auth::user()->department_id;
+        }
+
+        return $request->get('department_id');
+    }
+
+    protected function storeDepartmentId(Request $request)
+    {
+        if (Auth::user()->is_admin != '1') {
+            return Auth::user()->department_id;
+        }
+
+        $departmentId = $request->input('department_id', $request->get('department_id'));
+        if ($departmentId === null || $departmentId === '' || $departmentId === 'home') {
+            return null;
+        }
+
+        return (int) $departmentId;
+    }
+
+    protected function redirectParams(Request $request, $departmentId = null): array
+    {
+        if (Auth::user()->is_admin != '1') {
+            return array_filter(['department_id' => Auth::user()->department_id]);
+        }
+
+        $value = $request->get('department_id', $departmentId);
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        return ['department_id' => $value];
     }
 }
-

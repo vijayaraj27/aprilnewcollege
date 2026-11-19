@@ -11,33 +11,21 @@
                 <div class="card">
                     <div class="card-header">
                         <h5>{{ $title }} {{ __('list') }}</h5>
+                        @if(!empty($selected_department))
+                        <small class="text-muted">{{ $selected_department->title }}</small>
+                        @elseif(!empty($selected_department_label))
+                        <small class="text-muted">{{ $selected_department_label }}</small>
+                        @endif
                     </div>
                     <div class="card-block">
                         @can($access.'-create')
-                        <a href="{{ route($route.'.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> {{ __('btn_add_new') }}</a>
+                        <a href="{{ route($route.'.create', $filter ?? []) }}" class="btn btn-primary"><i class="fas fa-plus"></i> {{ __('btn_add_new') }}</a>
                         @endcan
 
-                        <a href="{{ route($route.'.index') }}" class="btn btn-info"><i class="fas fa-sync-alt"></i> {{ __('btn_refresh') }}</a>
+                        <a href="{{ route($route.'.index', $filter ?? []) }}" class="btn btn-info"><i class="fas fa-sync-alt"></i> {{ __('btn_refresh') }}</a>
                     </div>
 
                     <div class="card-block">
-                        <!-- Filter Section -->
-                        <form method="GET" action="{{ route($route.'.index') }}" class="mb-3">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <select name="department_id" class="form-control" onchange="this.form.submit()">
-                                        <option value="">All Departments</option>
-                                        <option value="home" {{ request('department_id') == 'home' ? 'selected' : '' }}>Home Page Only</option>
-                                        @foreach($departments as $dept)
-                                            <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
-                                                {{ $dept->title }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </form>
-
                         <!-- [ Data table ] start -->
                         <div class="table-responsive">
                             <table id="export-table" class="display table nowrap table-striped table-hover" style="width:100%">
@@ -45,9 +33,8 @@
                                     <tr>
                                         <th>#</th>
                                         <th>{{ __('field_title') }}</th>
-                                        <th>Department</th>
+                                        <th>PDF / Link</th>
                                         <th>Notification Date</th>
-                                        <th>NEW Badge</th>
                                         <th>{{ __('field_status') }}</th>
                                         <th>{{ __('field_action') }}</th>
                                     </tr>
@@ -57,19 +44,18 @@
                                     <tr>
                                         <td>{{ $key + 1 }}</td>
                                         <td>
-                                            {!! str_limit($row->title, 50, ' ...') !!}
-                                            @if($row->attach)
-                                                <br><small class="text-muted"><i class="fas fa-file-pdf"></i> Has Attachment</small>
-                                            @endif
-                                            @if($row->link)
-                                                <br><small class="text-muted"><i class="fas fa-link"></i> Has Link</small>
+                                            {!! str_limit($row->title, 60, ' ...') !!}
+                                            @if($row->is_new)
+                                                <span class="badge badge-danger ml-1">NEW</span>
                                             @endif
                                         </td>
                                         <td>
-                                            @if($row->department_id)
-                                                <span class="badge badge-info">{{ $row->department->title ?? 'N/A' }}</span>
+                                            @if($row->link)
+                                                <a href="{{ $row->link }}" target="_blank" rel="noopener">{{ str_limit($row->link, 40, ' ...') }}</a>
+                                            @elseif($row->attach)
+                                                <a href="{{ asset('uploads/'.$path.'/'.$row->attach) }}" target="_blank" rel="noopener">Attachment</a>
                                             @else
-                                                <span class="badge badge-success">Home Page</span>
+                                                —
                                             @endif
                                         </td>
                                         <td>
@@ -77,13 +63,6 @@
                                             {{ date($setting->date_format, strtotime($row->notification_date)) }}
                                             @else
                                             {{ date("d M, Y", strtotime($row->notification_date)) }}
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($row->is_new)
-                                                <span class="badge badge-danger">NEW</span>
-                                            @else
-                                                <span class="text-muted">-</span>
                                             @endif
                                         </td>
                                         <td>
@@ -97,11 +76,10 @@
                                             <button type="button" class="btn btn-icon btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#showModal-{{ $row->id }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <!-- Include Show modal -->
                                             @include($view.'.show')
 
                                             @can($access.'-edit')
-                                            <a href="{{ route($route.'.edit', $row->id) }}" class="btn btn-icon btn-primary btn-sm">
+                                            <a href="{{ route($route.'.edit', $row->id) }}?{{ http_build_query($filter ?? []) }}" class="btn btn-icon btn-primary btn-sm">
                                                 <i class="far fa-edit"></i>
                                             </a>
                                             @endcan
@@ -110,7 +88,6 @@
                                             <button type="button" class="btn btn-icon btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $row->id }}">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
-                                            <!-- Include Delete modal -->
                                             @include('admin.layouts.inc.delete')
                                             @endcan
                                         </td>
@@ -130,4 +107,3 @@
 <!-- End Content-->
 
 @endsection
-

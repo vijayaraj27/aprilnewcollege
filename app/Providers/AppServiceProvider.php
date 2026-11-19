@@ -40,15 +40,30 @@ class AppServiceProvider extends ServiceProvider
         $user_languages = Language::where('status', '1')->get();
         $setting = Setting::where('status', '1')->first();
         // Generate menu HTML with proper nested structure
+        $menuController = new MenuController();
+        $footerMenus = collect();
         try {
-            $menus = Menu::where('status', 0)->orderBy('id', 'asc')->get();
-            
+            $menus = Menu::query()
+                ->where(function ($q) {
+                    $q->where('location', 'header')->orWhereNull('location');
+                })
+                ->where('status', 0)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+
             if ($menus->count() > 0) {
-                $menuController = new MenuController();
                 $treeView = $menuController->buildTreeView($menus);
             } else {
                 $treeView = '<ul class="" id=""><li class=""><a href="' . url('/') . '">Home</a></li></ul>';
             }
+
+            $footerMenus = Menu::query()
+                ->where('location', 'footer')
+                ->where('status', 0)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
         } catch (\Exception $e) {
             // Fallback menu with proper structure
             $treeView = '<ul class="" id=""><li class=""><a href="' . url('/') . '">Home</a></li><li class=""><a href="' . url('/trust') . '">Trust</a></li></ul>';
@@ -61,7 +76,19 @@ class AppServiceProvider extends ServiceProvider
                             ->orderBy('id', 'asc')
                             ->get();
         // Set Time Zone
-        Config::set('app.timezone', $setting->time_zone);
-        View::share(['setting' => $setting, 'user_languages' => $user_languages, 'schedule_setting' => $schedule_setting, 'topbarSetting' => $topbarSetting, 'socialSetting' => $socialSetting, 'footer_pages' => $footer_pages, 'treeView' => $treeView]);
+        if ($setting) {
+            Config::set('app.timezone', $setting->time_zone);
+        }
+        View::share([
+            'setting' => $setting,
+            'user_languages' => $user_languages,
+            'schedule_setting' => $schedule_setting,
+            'topbarSetting' => $topbarSetting,
+            'socialSetting' => $socialSetting,
+            'footer_pages' => $footer_pages,
+            'footerMenus' => $footerMenus,
+            'menuController' => $menuController,
+            'treeView' => $treeView,
+        ]);
     }
 }

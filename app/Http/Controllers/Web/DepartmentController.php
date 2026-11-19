@@ -9,8 +9,25 @@ use Illuminate\Support\Facades\Validator;
 
 use App\Models\Web\Department;
 use App\Models\Language;
+use App\Models\Web\AchievementItem;
+use App\Models\Web\ActivityItem;
+use App\Models\Web\CourseItem;
+use App\Models\Web\EventItem;
+use App\Models\Web\FacultyMember;
+use App\Models\Web\NotificationBoard;
+use App\Models\Web\UpcomingEvent;
+use App\Models\Web\InfrastructureItem;
+use App\Models\Web\LibraryItem;
+use App\Models\Web\MagazineItem;
+use App\Models\Web\NewsletterItem;
+use App\Models\Web\PlacementItem;
+use App\Models\Web\ProgrammeOutcome;
+use App\Models\Web\PublicationItem;
+use App\Models\Web\ResearchItem;
 use App\Models\Web\Slider;
+use App\Models\Web\SyllabusItem;
 use App\Models\Web\Testimonial;
+use App\Models\Web\VideoItem;
 
 use DB;
 
@@ -69,8 +86,20 @@ class DepartmentController extends Controller
 
     public function show($departmentSlug, $section = 'about')
     {
-        // Fetch department by slug
-        $department = Department::where('slug', $departmentSlug)->firstOrFail();
+        // Fetch department by slug (with common menu/legacy aliases)
+        $department = $this->resolveDepartmentBySlug($departmentSlug);
+        if (!$department) {
+            abort(404);
+        }
+
+        // If an alias was used, redirect to the canonical slug URL.
+        if ($department->slug !== $departmentSlug) {
+            $target = $section && $section !== 'about'
+                ? url('/department/'.$department->slug.'/'.$section)
+                : url('/department/'.$department->slug);
+
+            return redirect($target, 301);
+        }
 
         // Section to table mapping
         $tableMapping = [
@@ -102,20 +131,17 @@ class DepartmentController extends Controller
             ->where('departmentId', $department->id)
             ->first();
 
-        // Common data - Fetch department-specific sliders first, fallback to general sliders
+        // Department home/about uses that department's own sliders only.
         $sliders = Slider::where('language_id', Language::version()->id)
                          ->where('status', '1')
-                         ->where(function($query) use ($department) {
-                             $query->where('department_id', $department->id)
-                                   ->orWhere('department_id', 0);
-                         })
-                         ->orderBy('department_id', 'desc') // Department-specific sliders first
+                         ->where('department_id', $department->id)
                          ->orderBy('id', 'asc')
                          ->get();
+        // Department pages show only that department's testimonials (not home).
         $testimonials = Testimonial::where('language_id', Language::version()->id)
             ->where('status', '1')
-            ->where('department_id', '0')
-            ->orderBy('id', 'desc')
+            ->where('department_id', $department->id)
+            ->orderBy('id', 'asc')
             ->get();
 
         // Safe extraction helper
@@ -133,115 +159,459 @@ class DepartmentController extends Controller
             'vision'                       => $getValue($data, 'vision', ''),
             'mission'                      => $getValue($data, 'mission', ''),
             'coreValue'                    => $getValue($data, 'coreValue', ''),
-            'programmeEducationalObjectives' => json_decode($getValue($data, 'programmeEducationalObjectives', '[]'), true),
-            'programmeOutcomes'            => json_decode($getValue($data, 'programmeOutcomes', '[]'), true),
-            'programmeSpecificOutcomes'    => json_decode($getValue($data, 'programmeSpecificOutcomes', '[]'), true),
+            'programmeEducationalObjectives' => [],
+            'programmeOutcomes'            => [],
+            'programmeSpecificOutcomes'    => [],
             'contact'                      => json_decode($getValue($data, 'contact', '[]'), true),
             'department'                   => $department,
         ];
+
+        // One indexed query for PEO / PO / PSO (shared CRUD table)
+        $programmeOutcomesByType = ProgrammeOutcome::where('department_id', $department->id)
+            ->where('status', 1)
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('id', 'asc')
+            ->get()
+            ->groupBy('type');
+
+        $mapOutcomeItem = function ($row) {
+            if (!empty($row->title)) {
+                return [
+                    'title' => $row->title,
+                    'description' => $row->description,
+                ];
+            }
+
+            return $row->description;
+        };
+
+        $response['programmeEducationalObjectives'] = ($programmeOutcomesByType->get('peo') ?? collect())
+            ->map($mapOutcomeItem)
+            ->values()
+            ->all();
+        $response['programmeOutcomes'] = ($programmeOutcomesByType->get('po') ?? collect())
+            ->map($mapOutcomeItem)
+            ->values()
+            ->all();
+        $response['programmeSpecificOutcomes'] = ($programmeOutcomesByType->get('pso') ?? collect())
+            ->map($mapOutcomeItem)
+            ->values()
+            ->all();
+
+        // Department upcoming events & notifications (department home / about page)
+        if ($section === 'about') {
+            $response['upcomingEvents'] = UpcomingEvent::forDepartment($department->id)
+                ->active()
+                ->ordered()
+                ->limit(10)
+                ->get();
+            $response['notifications'] = NotificationBoard::forDepartment($department->id)
+                ->active()
+                ->ordered()
+                ->limit(10)
+                ->get();
+        }
 
         // Add section-specific data based on the current section
         if ($data) {
             switch ($section) {
                 case 'achievements':
-                    $response['staffAchievements'] = json_decode($getValue($data, 'staffAchievements', '[]'), true);
-                    $response['studentAchievements'] = json_decode($getValue($data, 'studentAchievements', '[]'), true);
-                    $response['studentAchievementsTableFormat'] = json_decode($getValue($data, 'studentAchievementsTableFormat', '[]'), true);
-                    $response['studentAchievementsAppeciationList'] = json_decode($getValue($data, 'studentAchievementsAppeciationList', '[]'), true);
+                    // lists loaded below from AchievementItem CRUD
                     break;
                     
                 case 'activities':
-                    $response['departmentActivity'] = json_decode($getValue($data, 'departmentActivity', '[]'), true);
-                    $response['studentParticipation'] = json_decode($getValue($data, 'studentParticipation', '[]'), true);
-                    $response['interInstituteEventsWinningPrize'] = json_decode($getValue($data, 'interInstituteEventsWinningPrize', '[]'), true);
-                    $response['industrialVisit'] = json_decode($getValue($data, 'industrialVisit', '[]'), true);
+                    // lists loaded below from ActivityItem CRUD
                     break;
                     
                 case 'events':
-                    $response['eventDetails'] = json_decode($getValue($data, 'eventDetails', '[]'), true);
-                    break;
-                    
-                case 'faculties':
-                    $response['teachingStaff'] = json_decode($getValue($data, 'teachingStaff', '[]'), true);
-                    $response['nonTeachingStaff'] = json_decode($getValue($data, 'nonTeachingStaff', '[]'), true);
+                    // lists loaded below from EventItem CRUD
                     break;
                     
                 case 'infrastructures':
-                    $response['buildings'] = json_decode($getValue($data, 'buildings', '[]'), true);
+                    // buildings loaded below from CRUD table
                     break;
                     
                 case 'libraries':
-                    $response['record'] = json_decode($getValue($data, 'record', '[]'), true);
+                    // lists loaded below from LibraryItem CRUD
                     break;
                     
                 case 'magazines':
-                    $response['magazines'] = json_decode($getValue($data, 'magazines', '[]'), true);
+                    // lists loaded below from MagazineItem CRUD
                     break;
                     
                 case 'newsletters':
-                    $response['newsletter'] = json_decode($getValue($data, 'newsletter', '[]'), true);
+                    // lists loaded below from NewsletterItem CRUD
                     break;
                     
                 case 'placements':
-                    $response['studentPlaced'] = json_decode($getValue($data, 'studentPlaced', '[]'), true);
+                    // lists loaded below from PlacementItem CRUD
                     break;
                     
                 case 'publications':
-                    $response['patent'] = json_decode($getValue($data, 'patent', '[]'), true);
-                    $response['bookChapter'] = json_decode($getValue($data, 'bookChapter', '[]'), true);
-                    // In DepartmentController.php
-
-                        $journalPublication = json_decode($getValue($data, 'journalPublication', '[]'), true);
-                        
-                        // Transform the data structure
-                        $transformedJournalPublication = [];
-                        foreach($journalPublication as $key => $yearData) {
-                            if(isset($yearData['year']) && isset($yearData['publications'])) {
-                                $transformedJournalPublication[] = [
-                                    'year' => $yearData['year'],
-                                    'publications' => array_map(function($pub) {
-                                        return [
-                                            'title' => $pub['journalName'] ?? 'Journal Publication',
-                                            'journal' => $pub['journal'] ?? '',
-                                            'authors' => $pub['authors'] ?? ''
-                                        ];
-                                    }, $yearData['publications'])
-                                ];
-                            }
-                        }
-                        
-                        $response['journalPublication'] = $transformedJournalPublication;
-                        
-                    //$response['journalPublication'] = json_decode($getValue($data, 'journalPublication', '[]'), true);
-                    $response['conferenceList'] = json_decode($getValue($data, 'conferenceList', '[]'), true);
+                    // lists loaded below from PublicationItem CRUD
                     break;
                     
                 case 'research':
-                    $response['phdHoldersList'] = json_decode($getValue($data, 'phdHoldersList', '[]'), true);
-                    $response['annaUniversityRecognizedSuperviorsNameList'] = json_decode($getValue($data, 'annaUniversityRecognizedSuperviorsNameList', '[]'), true);
-                    $response['listOfCandidatesPursuingPhdUnderDepartmentSupervisors'] = json_decode($getValue($data, 'listOfCandidatesPursuingPhdUnderDepartmentSupervisors', '[]'), true);
-                    $response['listOfDepartmentFacultiesPursuingPhd'] = json_decode($getValue($data, 'listOfDepartmentFacultiesPursuingPhd', '[]'), true);
-                    $response['phdAwardedUnderDepartmentSupervisor'] = json_decode($getValue($data, 'phdAwardedUnderDepartmentSupervisor', '[]'), true);
-                    $response['supervisor'] = json_decode($getValue($data, 'supervisor', '[]'), true);
-                    $response['funds'] = json_decode($getValue($data, 'funds', '[]'), true);
-                    $response['valueAddedGroup'] = json_decode($getValue($data, 'valueAddedGroup', '[]'), true);
+                    // lists loaded below from ResearchItem CRUD
                     break;
                     
                 case 'syllabus':
-                    $response['regulation'] = json_decode($getValue($data, 'regulation', '[]'), true);
-                    $response['questionBank'] = json_decode($getValue($data, 'questionBank', '[]'), true);
-                    $response['syllabus'] = json_decode($getValue($data, 'syllabus', '[]'), true);
+                    // lists loaded below from SyllabusItem CRUD
                     break;
                     
                 case 'videos':
-                    $response['videos'] = json_decode($getValue($data, 'videos', '[]'), true);
+                    // lists loaded below from VideoItem CRUD
                     break;
                     
                 case 'courses':
-                    $coursesData = json_decode($getValue($data, 'courses', '[]'), true);
-                    $response['courses'] = is_array($coursesData) ? array_values($coursesData) : [];
+                    // lists loaded below from CourseItem CRUD
                     break;
             }
+        }
+
+        if ($section === 'faculties') {
+            $facultyMembers = FacultyMember::where('department_id', $department->id)
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->groupBy('type');
+            $response['teachingStaff'] = $facultyMembers->get('teaching') ?? collect();
+            $response['nonTeachingStaff'] = $facultyMembers->get('non-teaching') ?? collect();
+        }
+
+        if ($section === 'infrastructures') {
+            $response['buildings'] = InfrastructureItem::where('department_id', $department->id)
+                ->where('type', 'buildings')
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+        }
+
+        if ($section === 'achievements') {
+            $achievementItems = AchievementItem::where('department_id', $department->id)
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->groupBy('type');
+
+            $response['staffAchievements'] = $achievementItems->get('staff') ?? collect();
+            $response['studentAchievements'] = $this->groupAchievementItemsByYear(
+                $achievementItems->get('student') ?? collect(),
+                'achievements'
+            );
+            $response['studentAchievementsTableFormat'] = $this->groupAchievementItemsByYear(
+                $achievementItems->get('student-table') ?? collect(),
+                'achievements'
+            );
+            $response['studentAchievementsAppeciationList'] = $this->groupAchievementItemsByYear(
+                $achievementItems->get('student-appreciation') ?? collect(),
+                'appreciations'
+            );
+        }
+
+        if ($section === 'placements') {
+            $placementItems = PlacementItem::where('department_id', $department->id)
+                ->where('type', 'student-placed')
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+            $response['studentPlaced'] = $this->groupContentItemsByYear($placementItems, 'placements', function ($item) {
+                return [
+                    'studentRegNumber' => $item->metaGet('studentRegNumber'),
+                    'studentName' => $item->metaGet('studentName', $item->title),
+                    'companyName' => $item->metaGet('companyName'),
+                ];
+            }, PlacementItem::class);
+        }
+
+        if ($section === 'videos') {
+            $response['videos'] = VideoItem::where('department_id', $department->id)
+                ->where('type', 'videos')
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'title' => $item->title,
+                        'YoutubeLink' => $item->metaGet('YoutubeLink'),
+                        'description' => $item->description,
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
+        if ($section === 'courses') {
+            $response['courses'] = CourseItem::where('department_id', $department->id)
+                ->where('type', 'courses')
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'title' => $item->title,
+                        'pdfLink' => $item->metaGet('pdfLink'),
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
+        if ($section === 'newsletters') {
+            $newsletterItems = NewsletterItem::where('department_id', $department->id)
+                ->where('type', 'newsletters')
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->sortByDesc(fn ($item) => NewsletterItem::yearSortKey($item->year))
+                ->values();
+
+            $response['newsletter'] = $newsletterItems->map(function ($item) {
+                return [
+                    'year' => $item->year,
+                    'pdfLink' => $item->metaGet('pdfLink'),
+                    'description' => $item->description,
+                ];
+            })->all();
+        }
+
+        if ($section === 'events') {
+            $eventItems = EventItem::where('department_id', $department->id)
+                ->where('type', 'events')
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $response['eventDetails'] = $eventItems->map(function ($item) {
+                return [
+                    'title' => $item->title,
+                    'description' => $item->description,
+                    'image1' => $item->metaGet('image1'),
+                    'image2' => $item->metaGet('image2'),
+                    // Legacy key used by older migrated rows / templates
+                    'imageFile' => $item->metaGet('image1'),
+                ];
+            })->values()->all();
+        }
+
+        if ($section === 'magazines') {
+            $magazineItems = MagazineItem::where('department_id', $department->id)
+                ->where('type', 'magazines')
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->sortByDesc(fn ($item) => MagazineItem::yearSortKey($item->year))
+                ->values();
+
+            $response['magazines'] = $magazineItems->map(function ($item) {
+                return [
+                    'year' => $item->year,
+                    'pdfLink' => $item->metaGet('pdfLink'),
+                    'description' => $item->description,
+                ];
+            })->all();
+        }
+
+        if ($section === 'syllabus') {
+            $syllabusItems = SyllabusItem::where('department_id', $department->id)
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->groupBy('type');
+
+            $mapSyllabus = function ($item) {
+                $row = [
+                    'Title' => $item->title,
+                    'programType' => $item->metaGet('programType'),
+                    'pdfLink' => $item->metaGet('pdfLink'),
+                ];
+                if ($item->type === 'regulation') {
+                    $row['regulationType'] = $item->metaGet('regulationType');
+                }
+                return $row;
+            };
+
+            $response['syllabus'] = SyllabusItem::sortForListing($syllabusItems->get('syllabus') ?? collect())
+                ->map($mapSyllabus)->values()->all();
+            $response['regulation'] = SyllabusItem::sortForListing($syllabusItems->get('regulation') ?? collect())
+                ->map($mapSyllabus)->values()->all();
+            $response['questionBank'] = SyllabusItem::sortForListing($syllabusItems->get('question-bank') ?? collect())
+                ->map($mapSyllabus)->values()->all();
+        }
+
+        if ($section === 'libraries') {
+            $response['record'] = LibraryItem::where('department_id', $department->id)
+                ->where('type', 'record')
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'title' => $item->title,
+                        'noOfBooks' => $item->metaGet('noOfBooks'),
+                        'description' => $item->description,
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
+        if ($section === 'research') {
+            $researchItems = ResearchItem::where('department_id', $department->id)
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->groupBy('type');
+
+            $mapMeta = function ($items) {
+                return ($items ?? collect())->map(function ($item) {
+                    return array_merge(['title' => $item->title], $item->meta);
+                })->values()->all();
+            };
+
+            $response['phdHoldersList'] = $mapMeta($researchItems->get('phd'));
+            $response['annaUniversityRecognizedSuperviorsNameList'] = $mapMeta($researchItems->get('anna-university'));
+            $response['listOfCandidatesPursuingPhdUnderDepartmentSupervisors'] = $mapMeta($researchItems->get('pursuing-phd'));
+            $response['listOfDepartmentFacultiesPursuingPhd'] = $mapMeta($researchItems->get('faculties-pursuing-phd'));
+            $response['phdAwardedUnderDepartmentSupervisor'] = $mapMeta($researchItems->get('phd-awarded'));
+            $response['supervisor'] = $mapMeta($researchItems->get('supervisor'));
+            $response['valueAddedGroup'] = $mapMeta($researchItems->get('value-added-group'));
+            $response['funds'] = $this->groupContentItemsByYear(
+                $researchItems->get('funds') ?? collect(),
+                'fundDetails',
+                function ($item) {
+                    return [
+                        'nameOfPi' => $item->metaGet('nameOfPi'),
+                        'titleOfTheProject' => $item->metaGet('titleOfTheProject'),
+                        'amount' => $item->metaGet('amount'),
+                        'fundingAgency' => $item->metaGet('fundingAgency'),
+                        'OrderNoAndDate' => $item->metaGet('OrderNoAndDate'),
+                        'status' => $item->metaGet('status'),
+                    ];
+                },
+                ResearchItem::class
+            );
+        }
+
+        if ($section === 'publications') {
+            $publicationItems = PublicationItem::where('department_id', $department->id)
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->groupBy('type');
+
+            $response['patent'] = ($publicationItems->get('patent') ?? collect())->map(function ($item) {
+                return [
+                    'NameOfTheInventors' => $item->metaGet('NameOfTheInventors'),
+                    'nameOfTheInventors' => $item->metaGet('NameOfTheInventors'),
+                    'titleOfThePatents' => $item->metaGet('titleOfThePatents', $item->title),
+                    'patentNumber' => $item->metaGet('patentNumber'),
+                    'publishedDate' => $item->metaGet('publishedDate'),
+                ];
+            })->values()->all();
+
+            $response['bookChapter'] = $this->groupContentItemsByYear(
+                $publicationItems->get('book-chapter') ?? collect(),
+                'bookChapters',
+                fn ($item) => ['bookName' => $item->metaGet('bookName', $item->title)],
+                PublicationItem::class
+            );
+
+            $response['journalPublication'] = $this->groupContentItemsByYear(
+                $publicationItems->get('journal') ?? collect(),
+                'publications',
+                function ($item) {
+                    return [
+                        'journalName' => $item->metaGet('journalName', $item->title),
+                        'title' => $item->metaGet('journalName', $item->title),
+                        'journal' => '',
+                        'authors' => '',
+                    ];
+                },
+                PublicationItem::class
+            );
+
+            $response['conferenceList'] = ($publicationItems->get('conference') ?? collect())->map(function ($item) {
+                return ['list' => $item->metaGet('list', $item->title)];
+            })->values()->all();
+        }
+
+        if ($section === 'activities') {
+            $activityItems = ActivityItem::where('department_id', $department->id)
+                ->where('status', 1)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->groupBy('type');
+
+            $response['departmentActivity'] = $this->groupContentItemsByYear(
+                $activityItems->get('department-activity') ?? collect(),
+                'activities',
+                function ($item) {
+                    return [
+                        'teacherName' => $item->metaGet('teacherName'),
+                        'programmeTitle' => $item->metaGet('programmeTitle', $item->title),
+                        'organizer' => $item->metaGet('organizer'),
+                        'duration' => $item->metaGet('duration'),
+                    ];
+                },
+                ActivityItem::class
+            );
+
+            $response['studentParticipation'] = $this->groupContentItemsByYear(
+                $activityItems->get('student-participation') ?? collect(),
+                'participations',
+                function ($item) {
+                    return [
+                        'eventDate' => $item->metaGet('eventDate'),
+                        'eventName' => $item->metaGet('eventName', $item->title),
+                        'conductedBy' => $item->metaGet('conductedBy'),
+                        'nameOfTheStudentsParticipated' => $item->metaGet('nameOfTheStudentsParticipated'),
+                    ];
+                },
+                ActivityItem::class
+            );
+
+            $response['interInstituteEventsWinningPrize'] = $this->groupContentItemsByYear(
+                $activityItems->get('inter-institute-prize') ?? collect(),
+                'events',
+                function ($item) {
+                    return [
+                        'eventDate' => $item->metaGet('eventDate'),
+                        'date' => $item->metaGet('eventDate'),
+                        'eventName' => $item->metaGet('eventName', $item->title),
+                        'conductedBy' => $item->metaGet('conductedBy'),
+                        'organizedBy' => $item->metaGet('conductedBy'),
+                        'nameOfTheStudentsParticipated' => $item->metaGet('nameOfTheStudentsParticipated'),
+                        'studentName' => $item->metaGet('nameOfTheStudentsParticipated'),
+                        'prizeWon' => $item->metaGet('prizeWon'),
+                        'prize' => $item->metaGet('prizeWon'),
+                    ];
+                },
+                ActivityItem::class
+            );
+
+            $response['industrialVisit'] = ($activityItems->get('industrial-visit') ?? collect())->map(function ($item) {
+                return [
+                    'nameOftheIndustry' => $item->metaGet('nameOftheIndustry', $item->title),
+                    'semester' => $item->metaGet('semester'),
+                    'staffAccompanied' => $item->metaGet('staffAccompanied'),
+                    'Duration' => $item->metaGet('Duration'),
+                ];
+            })->values()->all();
         }
 
         // Choose view based on section
@@ -500,5 +870,124 @@ class DepartmentController extends Controller
             // Log or display the error message
             dd($e->getMessage());
         }
+    }
+
+    private function groupAchievementItemsByYear($items, string $childrenKey): array
+    {
+        $grouped = [];
+
+        foreach ($items as $item) {
+            $year = trim((string) ($item->year ?? ''));
+            // Skip empty / "Other" year buckets on the public page
+            if ($year === '' || strcasecmp($year, 'Other') === 0) {
+                continue;
+            }
+            if (!isset($grouped[$year])) {
+                $grouped[$year] = [
+                    'year' => $year,
+                    $childrenKey => [],
+                    '_sort' => AchievementItem::yearSortKey($year),
+                ];
+            }
+
+            if ($childrenKey === 'appreciations') {
+                $grouped[$year][$childrenKey][] = [
+                    'studentName' => $item->student_name,
+                    'yearOfStudent' => $item->year_of_student,
+                    'eventName' => $item->event_name,
+                    'projectName' => $item->project_name,
+                    'supervisor' => $item->supervisor,
+                    'status' => $item->result_status,
+                    'achievement' => $item->description,
+                ];
+            } elseif ($item->type === 'student-table') {
+                $grouped[$year][$childrenKey][] = [
+                    'studentName' => $item->student_name,
+                    'eventNature' => $item->event_nature,
+                    'eventName' => $item->event_name,
+                    'periodDate' => $item->period_date,
+                    'organizedBy' => $item->organized_by,
+                    'awards' => $item->awards,
+                ];
+            } else {
+                $grouped[$year][$childrenKey][] = [
+                    'title' => $item->title,
+                    'description' => $item->description,
+                    'image' => $item->image,
+                ];
+            }
+        }
+
+        $grouped = array_values($grouped);
+        usort($grouped, function ($a, $b) {
+            return ($b['_sort'] ?? 0) <=> ($a['_sort'] ?? 0);
+        });
+
+        foreach ($grouped as &$group) {
+            unset($group['_sort']);
+        }
+        unset($group);
+
+        return $grouped;
+    }
+
+    private function groupContentItemsByYear($items, string $childrenKey, callable $mapChild, string $modelClass): array
+    {
+        $grouped = [];
+
+        foreach ($items as $item) {
+            $year = trim((string) ($item->year ?? ''));
+            if ($year === '' || strcasecmp($year, 'Other') === 0) {
+                continue;
+            }
+            if (!isset($grouped[$year])) {
+                $grouped[$year] = [
+                    'year' => $year,
+                    $childrenKey => [],
+                    '_sort' => $modelClass::yearSortKey($year),
+                ];
+            }
+            $grouped[$year][$childrenKey][] = $mapChild($item);
+        }
+
+        $grouped = array_values($grouped);
+        usort($grouped, function ($a, $b) {
+            return ($b['_sort'] ?? 0) <=> ($a['_sort'] ?? 0);
+        });
+
+        foreach ($grouped as &$group) {
+            unset($group['_sort']);
+        }
+        unset($group);
+
+        return $grouped;
+    }
+
+    /**
+     * Resolve a department by canonical slug or known menu/legacy aliases.
+     */
+    private function resolveDepartmentBySlug(string $slug): ?Department
+    {
+        $department = Department::where('slug', $slug)->first();
+        if ($department) {
+            return $department;
+        }
+
+        $aliases = [
+            'bio-medical' => 'biomedical-engineering',
+            'bio-medical-ug' => 'biomedical-engineering',
+            'biomedical' => 'biomedical-engineering',
+            'bio-technology' => 'biotechnology',
+            'bio-tech' => 'biotechnology',
+            'master-business-administration' => 'master-of-business-administration',
+            'mba' => 'master-of-business-administration',
+        ];
+
+        $canonical = $aliases[$slug] ?? null;
+        if (!$canonical) {
+            return null;
+        }
+
+        return Department::where('slug', $canonical)->first();
     }
 }

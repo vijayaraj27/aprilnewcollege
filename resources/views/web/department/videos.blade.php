@@ -4,12 +4,8 @@
 @section('page-description', 'Educational Videos and Materials')
 
 @section('main-content')
-</div>
-
-        <!-- Main Content -->
-        <div class="col-lg-9 col-md-8">
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -82,11 +78,10 @@
         @endif
 
         <!-- Videos List -->
-        @if(!empty($data->videos))
         @php
-            $videos = is_string($data->videos) ? json_decode($data->videos, true) : $data->videos;
+            $videos = is_array($videos ?? null) ? $videos : [];
         @endphp
-        @if(is_array($videos) && count($videos) > 0)
+        @if(count($videos) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="videos-section">
@@ -106,9 +101,9 @@
                                 <div class="video-details">
                                     @if(!empty($video['YoutubeLink']))
                                     <div class="video-link">
-                                        <a href="{{ $video['YoutubeLink'] }}" 
-                                           target="_blank" 
-                                           class="btn btn-success btn-sm watch-btn">
+                                        <a href="{{ $video['YoutubeLink'] }}"
+                                           target="_blank"
+                                           class="btn btn-success watch-btn">
                                             <i class="fa fa-youtube-play"></i> Watch on YouTube
                                         </a>
                                     </div>
@@ -124,7 +119,6 @@
                 </div>
             </div>
         </div>
-        @endif
         @endif
 
         <!-- Video Details -->
@@ -174,7 +168,7 @@
         @endif
 
         <!-- No Data Message -->
-        @if(empty($data->videos) && empty($data->videoUrl) && empty($data->videoDetails))
+        @if(count($videos) === 0 && empty($data->videoUrl) && empty($data->videoDetails))
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">
@@ -191,7 +185,26 @@
 
 @push('styles')
 <style>
-/* Page-specific styles can be added here */
+.videos-section .watch-btn,
+.video-item .watch-btn,
+.video-detail-item .watch-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    width: auto !important;
+    max-width: none;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    font-weight: 600;
+    line-height: 1.2 !important;
+    border-radius: 4px !important;
+    white-space: nowrap;
+}
+.videos-section .watch-btn i,
+.video-item .watch-btn i,
+.video-detail-item .watch-btn i {
+    font-size: 14px;
+}
 </style>
 @endpush
 

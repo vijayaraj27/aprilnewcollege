@@ -4,20 +4,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Traits\FileUploader;
 use App\Models\Web\Publications;
+use App\Models\Web\PublicationItem;
 use Auth;
 use Toastr;
 
 class PublicationsController extends Controller
 {
     use FileUploader;
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+
     public function __construct()
     {
-        // Module Data
         $this->title    = trans_choice('Publications', 1);
         $this->route    = 'admin.publications';
         $this->view     = 'admin.web.publications';
@@ -25,67 +21,51 @@ class PublicationsController extends Controller
         $this->access   = 'publications';
         $this->middleware('permission:'.$this->access.'-view');
     }
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
 
-     public function index()
-        {
-            $data['title']  = $this->title;
-            $data['route']  = $this->route;
-            $data['view']   = $this->view;
-            $data['path']   = $this->path;
-            $data['access'] = $this->access;
-            $data['baseurl'] = config('app.url');
+    public function index()
+    {
+        $data['title']  = $this->title;
+        $data['route']  = $this->route;
+        $data['view']   = $this->view;
+        $data['path']   = $this->path;
+        $data['access'] = $this->access;
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
+        $data['publications'] = Publications::all();
 
-            $data['publications'] = Publications::all(); // Example: Fetch all publications.
-
-            return view($this->view.'.index', $data);
-        }
-
+        return view($this->view.'.index', $data);
+    }
 
     public function show($slug)
     {
         $result = explode('_', $slug);
         $departmentId = $result[0];
-        $section= $result[1];
+        $section = $result[1] ?? 'basic';
 
-       // echo $section." 123456 ";
+        if (isset(PublicationItem::SECTION_TYPE_MAP[$section])) {
+            return redirect()->route('admin.publication-item.index', [
+                'department_id' => $departmentId,
+                'type' => PublicationItem::SECTION_TYPE_MAP[$section],
+            ]);
+        }
 
         $data['title']  = $this->title;
         $data['route']  = $this->route;
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['departmentId'] = $departmentId;
         $data['section'] = $section;
 
         $query = Publications::query();
         $query->where('departmentId', $departmentId);
-        $data['row'] =  $query->first();       
-        
-            $data['record'] = isset($data['row']['record']) && is_string($data['row']['record']) 
-            ? array_values(json_decode($data['row']['record'], true) ?? []) 
-            : [];
-
-            //record
-
+        $data['row'] = $query->first();
 
         return view($this->view.'.index', $data);
     }
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request, $departmentId = null)
     {
- 
-        // Check if the row exists with the given departmentId
         $Publications = Publications::where('departmentId', $request->departmentId)->first();
 
         if (Auth::user()->department_id != 0 && $request->departmentId != Auth::user()->department_id) {
@@ -102,72 +82,23 @@ class PublicationsController extends Controller
             $message = 'Record created successfully';
         }
 
-        if($request->section === 'basic'){
-            
-            if ($request->hasFile('imageFile')) {            
-                $Publications->imageFile = $this->uploadImage($request, 'imageFile', $this->path, null, 800);                 
+        if ($request->section === 'basic') {
+            if ($request->hasFile('imageFile')) {
+                $Publications->imageFile = $this->uploadImage($request, 'imageFile', $this->path, null, 800);
             }
-            
             $Publications->title = $request->title;
-            $Publications->description = $request->description;            
-
-        }else if($request->section === 'sectionAbout'){
-            if ($request->hasFile('imageFile2')) {            
-                $Publications->imageFile2 = $this->uploadImage($request, 'imageFile2', $this->path, null, 800);                 
+            $Publications->description = $request->description;
+        } elseif ($request->section === 'sectionAbout') {
+            if ($request->hasFile('imageFile2')) {
+                $Publications->imageFile2 = $this->uploadImage($request, 'imageFile2', $this->path, null, 800);
             }
-            
             $Publications->title2 = $request->title2;
-            $Publications->description2 = $request->description2;  
-        }else if($request->section === 'patent'){
-            $Publications->patent = json_encode($request->patent, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'bookchapter'){
-            $Publications->bookChapter = json_encode($request->bookChapter, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'journalpublication'){
-            // Get data and process to ensure ALL entries are captured
-            $journalPublicationData = $request->input('journalPublication', []);
-            
-            // Handle JSON string if needed
-            if (is_string($journalPublicationData) && !empty($journalPublicationData)) {
-                $decoded = json_decode($journalPublicationData, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $journalPublicationData = $decoded;
-                }
-            }
-            
-            // Process and normalize
-            $processedData = [];
-            if (is_array($journalPublicationData) && !empty($journalPublicationData)) {
-                foreach (array_values($journalPublicationData) as $yearData) {
-                    if (is_array($yearData) && isset($yearData['year']) && !empty(trim($yearData['year']))) {
-                        $yearEntry = [
-                            'year' => trim($yearData['year']),
-                            'publications' => []
-                        ];
-                        
-                        if (isset($yearData['publications']) && is_array($yearData['publications'])) {
-                            foreach (array_values($yearData['publications']) as $publication) {
-                                if (is_array($publication)) {
-                                    $journalName = isset($publication['journalName']) ? trim($publication['journalName']) : '';
-                                    if (!empty($journalName)) {
-                                        $yearEntry['publications'][] = [
-                                            'journalName' => $journalName
-                                        ];
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if (!empty($yearEntry['publications'])) {
-                            $processedData[] = $yearEntry;
-                        }
-                    }
-                }
-            }
-            
-            $Publications->journalPublication = json_encode($processedData, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'conferenceList'){
-            $Publications->conferenceList = json_encode($request->conferenceList, JSON_UNESCAPED_UNICODE);
-        }        
+            $Publications->description2 = $request->description2;
+        } else {
+            Toastr::error(__('These publications are managed from the Publication Item CRUD pages.'), __('msg_error'));
+            return redirect()->back();
+        }
+
         $Publications->save();
         Toastr::success(__($message), __('msg_success'));
         return redirect()->back();

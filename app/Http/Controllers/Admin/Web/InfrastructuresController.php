@@ -41,7 +41,7 @@ class InfrastructuresController extends Controller
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['infrastructures'] = Infrastructures::all(); // Example: Fetch all infrastructures.
 
         return view($this->view.'.index', $data);
@@ -56,14 +56,21 @@ class InfrastructuresController extends Controller
     {
         $result = explode('_', $slug);
         $departmentId = $result[0];
-        $section = $result[1];
+        $section = $result[1] ?? 'basic';
+
+        if ($section === 'buildings') {
+            return redirect()->route('admin.infrastructure-item.index', [
+                'department_id' => $departmentId,
+                'type' => 'buildings',
+            ]);
+        }
 
         $data['title']  = $this->title;
         $data['route']  = $this->route;
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['departmentId'] = $departmentId;
         $data['section'] = $section;
 
@@ -89,7 +96,6 @@ class InfrastructuresController extends Controller
             'imageFile' => 'nullable|image|max:2048', // For basic section
             'title' => 'nullable|string',
             'description' => 'nullable|string',
-            'buildings' => 'nullable|array',
         ];
     
         $validated = $request->validate($rules);
@@ -98,7 +104,7 @@ class InfrastructuresController extends Controller
         $Infrastructures = Infrastructures::firstOrNew(['departmentId' => $request->departmentId]);
         $message = $Infrastructures->exists ? 'Record updated successfully' : 'Record created successfully';
     
-        // Handle 'basic' section
+        // Handle 'basic' section only (buildings use infrastructure-item CRUD)
         if ($request->section === 'basic') {
             if ($request->hasFile('imageFile')) {
                 $Infrastructures->imageFile = $this->uploadImage(
@@ -111,38 +117,11 @@ class InfrastructuresController extends Controller
             }
             $Infrastructures->title = $request->title;
             $Infrastructures->description = $request->description;
-        }elseif ($request->section === 'buildings') {
-            $buildingsData = [];
-        
-            if ($request->has('buildings')) {
-                foreach ($request->buildings as $index => $building) {
-                    $buildingEntry = [
-                        'title' => $building['title'] ?? '',
-                        'description' => $building['description'] ?? '',
-                    ];
-        
-                    // Handle file upload for each building
-                    if ($request->hasFile("buildings.$index.imageFile")) {
-                        $buildingEntry['imageFile'] = $this->uploadImage(
-                            $request->file("buildings.$index.imageFile"),
-                            'imageFile',
-                            $this->path,
-                            null,
-                            800
-                        );
-                    } elseif (isset($building['imageFile']) && is_string($building['imageFile'])) {
-                        $buildingEntry['imageFile'] = $building['imageFile']; // Maintain existing image
-                    }
-        
-                    $buildingsData[] = $buildingEntry;
-                }
-            }
-        
-            $Infrastructures->buildings = json_encode($buildingsData, JSON_UNESCAPED_UNICODE);
+        } else {
+            Toastr::error(__('Buildings are managed from the Buildings CRUD page.'), __('msg_error'));
+            return redirect()->back();
         }
-        
 
-    
         // Save the record
         $Infrastructures->save();
     

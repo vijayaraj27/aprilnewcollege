@@ -38,7 +38,7 @@ class AboutUsController extends Controller
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
       //  echo $data['baseurl'];exit;
       //  $homequery = Homeabout::where('language_id', Language::version()->id);
         $query = AboutUs::query();
@@ -52,9 +52,6 @@ class AboutUsController extends Controller
         // }
         $row =  $query->first();
 
-        $data['programmeEducationalObjectives'] = $row  ? json_decode($row->programmeEducationalObjectives, true) : [];
-        $data['programmeOutcomes'] = $row  ? json_decode($row->programmeOutcomes, true) : [];
-        $data['programmeSpecificOutcomes'] = $row  ? json_decode($row->programmeSpecificOutcomes, true) : [];
         $data['row'] = $query->first();
         $data['departmentId'] = $departmentId;
         // dd(Auth::user()->department_id);
@@ -79,9 +76,6 @@ class AboutUsController extends Controller
             'vision' => 'required',
             'mission' => 'required',
             'coreValue' => 'required',
-            'programmeEducationalObjectives' => 'required|array',
-            'programmeOutcomes' => 'required|array',
-            'programmeSpecificOutcomes' => 'required|array',
             'contact.name' => 'required',
             'contact.email' => 'required|email',
             'contact.phone' => 'required',
@@ -130,11 +124,6 @@ class AboutUsController extends Controller
 
         $aboutUs->departmentSectionImage = json_encode($request->departmentSectionImage, JSON_UNESCAPED_UNICODE);
 
-        // Programme Outcomes (store as JSON)
-        $aboutUs->programmeEducationalObjectives = json_encode($request->programmeEducationalObjectives, JSON_UNESCAPED_UNICODE);
-        $aboutUs->programmeOutcomes = json_encode($request->programmeOutcomes, JSON_UNESCAPED_UNICODE);
-        $aboutUs->programmeSpecificOutcomes = json_encode($request->programmeSpecificOutcomes, JSON_UNESCAPED_UNICODE);
-      
         // Contact Information
         $aboutUs->contact = json_encode($request->contact, JSON_UNESCAPED_UNICODE);
 

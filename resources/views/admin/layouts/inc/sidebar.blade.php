@@ -155,8 +155,10 @@
     @canany(['topbar-setting-view', 'social-setting-view', 'slider-view', 'slider-create', 'about-us-view',
     'feature-view', 'feature-create', 'course-view', 'course-create', 'web-event-view', 'web-event-create', 'news-view',
     'news-create', 'gallery-view', 'gallery-create', 'faq-view', 'faq-create', 'testimonial-view', 'testimonial-create',
-    'page-view', 'page-create', 'call-to-action-view'])
-    <li class="nav-item pcoded-hasmenu {{ Request::is('admin/web*') ? 'pcoded-trigger active' : '' }}">
+    'page-view', 'page-create', 'call-to-action-view', 'upcoming-event-view', 'upcoming-event-create',
+    'notification-board-view', 'notification-board-create', 'menu-view', 'menu-create', 'footer-menu-view',
+    'footer-menu-create'])
+    <li class="nav-item pcoded-hasmenu {{ Request::is('admin/web*') || Request::is('admin/home-slider*') || Request::is('admin/home-testimonial*') ? 'pcoded-trigger active' : '' }}">
         <a href="#!" class="nav-link">
             <span class="pcoded-micon"><i class="fas fa-globe"></i></span>
             <span class="pcoded-mtext">{{ trans_choice('module_front_web', 2) }}</span>
@@ -182,6 +184,20 @@
     @canany(['slider-view', 'slider-create'])
     <li class="{{ Request::is('admin/home-slider*') ? 'active' : '' }}"><a href="{{ route('admin.home-slider.index') }}"
             class=""><i class="fas fa-home"></i> Home Page {{ trans_choice('module_slider', 2) }}</a></li>
+    @endcanany
+    @canany(['upcoming-event-view', 'upcoming-event-create'])
+    <li class="{{ Request::is('admin/web/upcoming-event*') && request('department_id') == 'home' ? 'active' : '' }}">
+        <a href="{{ route('admin.upcoming-event.index', ['department_id' => 'home']) }}" class="">
+            <i class="fas fa-home"></i> Home Page Upcoming Events
+        </a>
+    </li>
+    @endcanany
+    @canany(['notification-board-view', 'notification-board-create'])
+    <li class="{{ Request::is('admin/web/notification-board*') && request('department_id') == 'home' ? 'active' : '' }}">
+        <a href="{{ route('admin.notification-board.index', ['department_id' => 'home']) }}" class="">
+            <i class="fas fa-home"></i> Home Page Notifications
+        </a>
+    </li>
     @endcanany
     {{--
     @can('about-us-view')
@@ -230,6 +246,16 @@
     @canany(['page-view', 'page-create'])
     <li class="{{ Request::is('admin/web/page*') ? 'active' : '' }}"><a href="{{ route('admin.page.index') }}"
             class="">{{ trans_choice('module_footer_page', 2) }}</a></li>
+    @endcanany
+    @canany(['menu-view', 'menu-create'])
+    <li class="{{ Request::is('admin/web/menu-manager*') ? 'active' : '' }}">
+        <a href="{{ route('admin.menu-manager.index') }}" class="">Main Menu</a>
+    </li>
+    @endcanany
+    @canany(['footer-menu-view', 'footer-menu-create'])
+    <li class="{{ Request::is('admin/web/footer-menu*') ? 'active' : '' }}">
+        <a href="{{ route('admin.footer-menu.index') }}" class="">Footer Menu</a>
+    </li>
     @endcanany
     </ul>
     </li>

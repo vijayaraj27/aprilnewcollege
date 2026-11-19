@@ -9,7 +9,7 @@
         <!-- Main Content -->
         <div class="col-lg-9 col-md-8">
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -62,24 +62,10 @@
         @endif
 
         <!-- Student Placements -->
-        @if(!empty($data->studentPlaced))
         @php
-            $studentPlacements = is_string($data->studentPlaced) ? json_decode($data->studentPlaced, true) : $data->studentPlaced;
-            // Sort by year in descending order (newest first) - handles multiple years and multiple records per year
-            if (is_array($studentPlacements) && count($studentPlacements) > 0) {
-                usort($studentPlacements, function($a, $b) {
-                    $yearA = isset($a['year']) && !empty($a['year']) ? (string)$a['year'] : '0000';
-                    $yearB = isset($b['year']) && !empty($b['year']) ? (string)$b['year'] : '0000';
-                    // Extract first year from formats like "2023-24" or "2020-21"
-                    preg_match('/(\d{4})/', $yearA, $matchA);
-                    preg_match('/(\d{4})/', $yearB, $matchB);
-                    $numA = isset($matchA[1]) ? (int)$matchA[1] : 0;
-                    $numB = isset($matchB[1]) ? (int)$matchB[1] : 0;
-                    return $numB - $numA; // Descending order (newest first)
-                });
-            }
+            $studentPlacements = is_array($studentPlaced ?? null) ? $studentPlaced : [];
         @endphp
-        @if(is_array($studentPlacements) && count($studentPlacements) > 0)
+        @if(count($studentPlacements) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="placement-section">
@@ -137,27 +123,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Placement Table Format -->
-        @if(!empty($data->studentPlaced) && is_string($data->studentPlaced))
-        @php
-            $placementTable = json_decode($data->studentPlaced, true);
-            // Sort by year in descending order (newest first) - handles multiple years and multiple records per year
-            if (is_array($placementTable) && count($placementTable) > 0) {
-                usort($placementTable, function($a, $b) {
-                    $yearA = isset($a['year']) && !empty($a['year']) ? (string)$a['year'] : '0000';
-                    $yearB = isset($b['year']) && !empty($b['year']) ? (string)$b['year'] : '0000';
-                    // Extract first year from formats like "2023-24" or "2020-21"
-                    preg_match('/(\d{4})/', $yearA, $matchA);
-                    preg_match('/(\d{4})/', $yearB, $matchB);
-                    $numA = isset($matchA[1]) ? (int)$matchA[1] : 0;
-                    $numB = isset($matchB[1]) ? (int)$matchB[1] : 0;
-                    return $numB - $numA; // Descending order (newest first)
-                });
-            }
-        @endphp
-        @if(is_array($placementTable) && count($placementTable) > 0)
+        @if(count($studentPlacements) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="placement-section">
@@ -177,7 +145,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($placementTable as $yearData)
+                                @foreach($studentPlacements as $yearData)
                                     @if(is_array($yearData) && isset($yearData['year']))
                                         @if(isset($yearData['placements']) && is_array($yearData['placements']))
                                             @foreach($yearData['placements'] as $placement)
@@ -202,10 +170,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- No Data Message -->
-        @if(empty($data->studentPlaced) && empty($data->placementStatistics))
+        @if(count($studentPlacements) === 0 && empty($data->placementStatistics))
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">

@@ -4,12 +4,8 @@
 @section('page-description', 'Academic Curriculum and Syllabus')
 
 @section('main-content')
-</div>
-
-        <!-- Main Content -->
-        <div class="col-lg-9 col-md-8">
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -26,28 +22,27 @@
         @if(!empty($data->imageFile))
         <div class="row mb-5">
             <div class="col-md-12 text-center">
-                <img src="{{ asset('uploads/syllabus/' . $data->imageFile) }}" 
-                     alt="Department Syllabus" 
+                <img src="{{ asset('uploads/syllabus/' . $data->imageFile) }}"
+                     alt="Department Syllabus"
                      class="img-fluid rounded shadow-lg syllabus-banner">
             </div>
         </div>
         @endif
 
         <!-- Regulations -->
-        @if(!empty($data->regulation))
         @php
-            $regulations = is_string($data->regulation) ? json_decode($data->regulation, true) : $data->regulation;
+            $regulations = is_array($regulation ?? null) ? $regulation : [];
         @endphp
-        @if(is_array($regulations) && count($regulations) > 0)
+        @if(count($regulations) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="syllabus-section">
                     <h2 class="section-title text-center mb-4">
                         <i class="fa fa-gavel text-primary"></i> Regulations
                     </h2>
-                    <div class="regulations-grid">
+                    <div class="dept-card-grid">
                         @foreach($regulations as $index => $regulation)
-                        <div class="regulation-item p-4 mb-4 border rounded">
+                        <div class="regulation-item p-4 border rounded">
                             <div class="regulation-content">
                                 <div class="regulation-header">
                                     <h4 class="regulation-title">
@@ -67,17 +62,15 @@
                                         @endif
                                     </div>
                                 </div>
-                                <div class="regulation-details">
-                                    @if(!empty($regulation['pdfLink']))
-                                    <div class="regulation-download">
-                                        <a href="{{ $regulation['pdfLink'] }}" 
-                                           target="_blank" 
-                                           class="btn btn-primary btn-sm download-btn">
-                                            <i class="fa fa-download"></i> Download PDF
-                                        </a>
-                                    </div>
-                                    @endif
+                                @if(!empty($regulation['pdfLink']))
+                                <div class="regulation-download">
+                                    <a href="{{ $regulation['pdfLink'] }}"
+                                       target="_blank"
+                                       class="btn btn-primary download-btn">
+                                        <i class="fa fa-download"></i> Download PDF
+                                    </a>
                                 </div>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -86,23 +79,21 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Question Bank -->
-        @if(!empty($data->questionBank))
         @php
-            $questionBank = is_string($data->questionBank) ? json_decode($data->questionBank, true) : $data->questionBank;
+            $questionBank = is_array($questionBank ?? null) ? $questionBank : [];
         @endphp
-        @if(is_array($questionBank) && count($questionBank) > 0)
+        @if(count($questionBank) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="syllabus-section">
                     <h2 class="section-title text-center mb-4">
                         <i class="fa fa-question-circle text-success"></i> Question Bank
                     </h2>
-                    <div class="question-bank-grid d-flex flex-wrap">
+                    <div class="dept-card-grid">
                         @foreach($questionBank as $index => $question)
-                        <div class="question-item p-4 mb-4 border rounded">
+                        <div class="question-item p-4 border rounded">
                             <div class="question-content">
                                 <div class="question-header">
                                     <h4 class="question-title">
@@ -115,17 +106,15 @@
                                     </span>
                                     @endif
                                 </div>
-                                <div class="question-details">
-                                    @if(!empty($question['pdfLink']))
-                                    <div class="question-download">
-                                        <a href="{{ $question['pdfLink'] }}" 
-                                           target="_blank" 
-                                           class="btn btn-success btn-sm download-btn">
-                                            <i class="fa fa-download"></i> Download PDF
-                                        </a>
-                                    </div>
-                                    @endif
+                                @if(!empty($question['pdfLink']))
+                                <div class="question-download">
+                                    <a href="{{ $question['pdfLink'] }}"
+                                       target="_blank"
+                                       class="btn btn-success download-btn">
+                                        <i class="fa fa-download"></i> Download PDF
+                                    </a>
                                 </div>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -134,23 +123,21 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Syllabus Details -->
-        @if(!empty($data->syllabus))
         @php
-            $syllabusDetails = is_string($data->syllabus) ? json_decode($data->syllabus, true) : $data->syllabus;
+            $syllabusDetails = is_array($syllabus ?? null) ? $syllabus : [];
         @endphp
-        @if(is_array($syllabusDetails) && count($syllabusDetails) > 0)
+        @if(count($syllabusDetails) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="syllabus-section">
                     <h2 class="section-title text-center mb-4">
                         <i class="fa fa-book text-warning"></i> Syllabus Details
                     </h2>
-                    <div class="syllabus-details-grid d-flex flex-wrap">
+                    <div class="dept-card-grid">
                         @foreach($syllabusDetails as $index => $syllabus)
-                        <div class="syllabus-item p-4 mb-4 border rounded">
+                        <div class="syllabus-item p-4 border rounded">
                             <div class="syllabus-content">
                                 <div class="syllabus-header">
                                     <h4 class="syllabus-title">
@@ -163,17 +150,15 @@
                                     </span>
                                     @endif
                                 </div>
-                                <div class="syllabus-details">
-                                    @if(!empty($syllabus['pdfLink']))
-                                    <div class="syllabus-download">
-                                        <a href="{{ $syllabus['pdfLink'] }}" 
-                                           target="_blank" 
-                                           class="btn btn-warning btn-sm download-btn">
-                                            <i class="fa fa-download"></i> Download PDF
-                                        </a>
-                                    </div>
-                                    @endif
+                                @if(!empty($syllabus['pdfLink']))
+                                <div class="syllabus-download">
+                                    <a href="{{ $syllabus['pdfLink'] }}"
+                                       target="_blank"
+                                       class="btn btn-warning download-btn">
+                                        <i class="fa fa-download"></i> Download PDF
+                                    </a>
                                 </div>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -181,7 +166,6 @@
                 </div>
             </div>
         </div>
-        @endif
         @endif
 
         <!-- Syllabus Details (Alternative Structure) -->
@@ -196,9 +180,9 @@
                     <h2 class="section-title text-center mb-4">
                         <i class="fa fa-list-alt text-info"></i> Syllabus Information
                     </h2>
-                    <div class="syllabus-info-grid d-flex flex-wrap ">
+                    <div class="dept-card-grid">
                         @foreach($syllabusDetailsAlt as $index => $info)
-                        <div class="syllabus-info-item p-4 mb-3 border rounded">
+                        <div class="syllabus-info-item p-4 border rounded">
                             <div class="syllabus-info-content">
                                 <div class="syllabus-info-header">
                                     <h4 class="syllabus-info-title">
@@ -206,20 +190,18 @@
                                         {{ $info['title'] ?? 'Syllabus Info ' . ($index + 1) }}
                                     </h4>
                                 </div>
-                                <div class="syllabus-info-details">
-                                    @if(!empty($info['description']))
-                                    <p class="syllabus-info-description">{!! $info['description'] !!}</p>
-                                    @endif
-                                    @if(!empty($info['pdfLink']))
-                                    <div class="syllabus-info-download">
-                                        <a href="{{ $info['pdfLink'] }}" 
-                                           target="_blank" 
-                                           class="btn btn-info btn-sm download-btn">
-                                            <i class="fa fa-download"></i> Download
-                                        </a>
-                                    </div>
-                                    @endif
+                                @if(!empty($info['description']))
+                                <p class="syllabus-info-description">{!! $info['description'] !!}</p>
+                                @endif
+                                @if(!empty($info['pdfLink']))
+                                <div class="syllabus-info-download">
+                                    <a href="{{ $info['pdfLink'] }}"
+                                       target="_blank"
+                                       class="btn btn-info download-btn">
+                                        <i class="fa fa-download"></i> Download
+                                    </a>
                                 </div>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -231,7 +213,7 @@
         @endif
 
         <!-- No Data Message -->
-        @if(empty($data->regulation) && empty($data->questionBank) && empty($data->syllabus) && empty($data->syllabusDetails))
+        @if(count($regulations) === 0 && count($questionBank) === 0 && count($syllabusDetails) === 0 && empty($data->syllabusDetails))
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">
@@ -248,12 +230,66 @@
 
 @push('styles')
 <style>
-/* Page-specific styles can be added here */
+/* True 3-column card grid — avoids Bootstrap col % + gap overflow */
+.syllabus-section .dept-card-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+@media (max-width: 991.98px) {
+    .syllabus-section .dept-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 575.98px) {
+    .syllabus-section .dept-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+.syllabus-section .dept-card-grid > .regulation-item,
+.syllabus-section .dept-card-grid > .question-item,
+.syllabus-section .dept-card-grid > .syllabus-item,
+.syllabus-section .dept-card-grid > .syllabus-info-item {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    min-width: 0;
+    background: #ececec;
+    box-shadow: 0 10px 30px 0 rgba(233, 233, 233, 0.5);
+    border-radius: 8px !important;
+}
+.syllabus-section .download-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    width: auto !important;
+    max-width: 100%;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    font-weight: 600;
+    line-height: 1.2 !important;
+    border-radius: 4px !important;
+    white-space: nowrap;
+}
+.syllabus-section .download-btn i {
+    font-size: 13px;
+    margin: 0 !important;
+}
+.syllabus-section .regulation-download,
+.syllabus-section .question-download,
+.syllabus-section .syllabus-download,
+.syllabus-section .syllabus-info-download {
+    margin-top: 12px;
+}
+.syllabus-section .regulation-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
 </style>
-@endpush
-
-@push('scripts')
-<script>
-// Page-specific scripts can be added here
-</script>
 @endpush

@@ -14,14 +14,17 @@
                         <h5>{{ __('modal_edit') }} {{ $title }}</h5>
                     </div>
                     <div class="card-block">
-                        <a href="{{ route($route.'.index') }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> {{ __('btn_back') }}</a>
+                        <a href="{{ route($route.'.index', $filter ?? []) }}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> {{ __('btn_back') }}</a>
 
-                        <a href="{{ route($route.'.edit', $row->id) }}" class="btn btn-info"><i class="fas fa-sync-alt"></i> {{ __('btn_refresh') }}</a>
+                        <a href="{{ route($route.'.edit', $row->id) }}?{{ http_build_query($filter ?? []) }}" class="btn btn-info"><i class="fas fa-sync-alt"></i> {{ __('btn_refresh') }}</a>
                     </div>
 
-                    <form class="needs-validation" novalidate action="{{ route($route.'.update', $row->id) }}" method="post" enctype="multipart/form-data">
+                    <form class="needs-validation" novalidate action="{{ route($route.'.update', $row->id) }}?{{ http_build_query($filter ?? []) }}" method="post" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
+                    @if(array_key_exists('department_id', $filter ?? []))
+                    <input type="hidden" name="department_id" value="{{ $filter['department_id'] }}">
+                    @endif
                     <div class="card-block">
                       <div class="row">
                         <!-- Form Start -->
@@ -35,22 +38,6 @@
                         </div>
 
                         <div class="form-group col-md-4">
-                            <label for="department_id">Department <span>*</span></label>
-                            <select class="form-control" name="department_id" id="department_id">
-                                <option value="home" {{ is_null($row->department_id) ? 'selected' : '' }}>Home Page</option>
-                                @foreach($departments as $department)
-                                    <option value="{{ $department->id }}" {{ old('department_id', $row->department_id) == $department->id ? 'selected' : '' }}>
-                                        {{ $department->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-
-                            <div class="invalid-feedback">
-                              {{ __('required_field') }} Department
-                            </div>
-                        </div>
-
-                        <div class="form-group col-md-6">
                             <label for="notification_date">Notification Date <span>*</span></label>
                             <input type="date" class="form-control date" name="notification_date" id="notification_date" value="{{ old('notification_date', $row->notification_date->format('Y-m-d')) }}" required>
 
@@ -69,12 +56,9 @@
                         </div>
 
                         <div class="form-group col-md-6">
-                            <label for="link">External Link</label>
-                            <input type="url" class="form-control" name="link" id="link" value="{{ old('link', $row->link) }}" placeholder="https://example.com">
-
-                            <div class="invalid-feedback">
-                              Please enter a valid URL
-                            </div>
+                            <label for="link">PDF / Link</label>
+                            <input type="text" class="form-control" name="link" id="link" value="{{ old('link', $row->link) }}" placeholder="https://example.com/file.pdf">
+                            <small class="form-text text-muted">Paste a PDF URL or any external link</small>
                         </div>
 
                         <div class="form-group col-md-6">

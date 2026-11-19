@@ -5,7 +5,7 @@
 
 @section('main-content')
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -29,12 +29,20 @@
         </div>
         @endif
 
-        <!-- Buildings and Facilities -->
-        @if(!empty($data->buildings))
         @php
-            $buildings = is_string($data->buildings) ? json_decode($data->buildings, true) : $data->buildings;
+            $buildings = $buildings ?? collect();
+            if (!($buildings instanceof \Illuminate\Support\Collection)) {
+                $buildings = collect($buildings);
+            }
+            $facilities = [];
+            if (!empty($data->facilities)) {
+                $facilities = is_string($data->facilities) ? json_decode($data->facilities, true) : $data->facilities;
+                $facilities = is_array($facilities) ? $facilities : [];
+            }
         @endphp
-        @if(is_array($buildings) && count($buildings) > 0)
+
+        <!-- Buildings -->
+        @if($buildings->isNotEmpty())
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="infrastructure-section">
@@ -43,22 +51,35 @@
                     </h2>
                     <div class="buildings-grid">
                         @foreach($buildings as $index => $building)
+                        @php
+                            $buildingTitle = is_object($building) ? ($building->title ?? '') : ($building['title'] ?? '');
+                            $buildingDescription = is_object($building) ? ($building->description ?? '') : ($building['description'] ?? '');
+                            $buildingImageUrl = null;
+                            if (is_object($building) && method_exists($building, 'imageUrl')) {
+                                $buildingImageUrl = $building->imageUrl();
+                            } elseif (is_array($building)) {
+                                $legacyImage = $building['image'] ?? ($building['imageFile'] ?? null);
+                                if (!empty($legacyImage)) {
+                                    $buildingImageUrl = asset('uploads/infrastructure-items/' . $legacyImage);
+                                }
+                            }
+                        @endphp
                         <div class="building-item p-4 mb-4 border rounded">
                             <div class="building-content">
                                 <div class="building-header">
                                     <h4 class="building-title">
                                         <i class="fa fa-university text-primary"></i>
-                                        {{ $building['title'] ?? 'Building ' . ($index + 1) }}
+                                        {{ $buildingTitle !== '' ? $buildingTitle : ('Building ' . ($index + 1)) }}
                                     </h4>
                                 </div>
                                 <div class="building-details">
-                                    @if(!empty($building['description']))
-                                    <p class="building-description">{!! $building['description'] !!}</p>
+                                    @if(!empty($buildingDescription))
+                                    <p class="building-description">{!! $buildingDescription !!}</p>
                                     @endif
-                                    @if(!empty($building['imageFile']))
+                                    @if(!empty($buildingImageUrl))
                                     <div class="building-image mt-3">
-                                        <img src="{{ asset('uploads/infrastructures/' . $building['imageFile']) }}" 
-                                             alt="{{ $building['title'] ?? 'Building Image' }}" 
+                                        <img src="{{ $buildingImageUrl }}"
+                                             alt="{{ $buildingTitle !== '' ? $buildingTitle : 'Building Image' }}"
                                              class="img-fluid rounded building-thumbnail">
                                     </div>
                                     @endif
@@ -71,14 +92,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Facilities -->
-        @if(!empty($data->facilities))
-        @php
-            $facilities = is_string($data->facilities) ? json_decode($data->facilities, true) : $data->facilities;
-        @endphp
-        @if(is_array($facilities) && count($facilities) > 0)
+        @if(count($facilities) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="infrastructure-section">
@@ -118,10 +134,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- No Data Message -->
-        @if(empty($data->buildings) && empty($data->facilities))
+        @if($buildings->isEmpty() && count($facilities) === 0)
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">

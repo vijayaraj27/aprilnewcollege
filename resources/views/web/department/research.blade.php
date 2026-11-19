@@ -9,7 +9,7 @@
         <!-- Main Content -->
         <div class="col-lg-9 col-md-8">
 <section class="section-padding">
-    <div class="container">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
@@ -34,9 +34,8 @@
         @endif
 
         <!-- PhD Holders List -->
-        @if(!empty($data->phdHoldersList))
         @php
-            $phdHolders = is_string($data->phdHoldersList) ? json_decode($data->phdHoldersList, true) : $data->phdHoldersList;
+            $phdHolders = is_array($phdHoldersList ?? null) ? $phdHoldersList : [];
             // Sort by yearOfAward in descending order (newest first) - handles multiple records
             if (is_array($phdHolders) && count($phdHolders) > 0) {
                 usort($phdHolders, function($a, $b) {
@@ -93,14 +92,12 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Anna University Recognized Supervisors -->
-        @if(!empty($data->annaUniversityRecognizedSuperviorsNameList))
         @php
-            $supervisors = is_string($data->annaUniversityRecognizedSuperviorsNameList) ? json_decode($data->annaUniversityRecognizedSuperviorsNameList, true) : $data->annaUniversityRecognizedSuperviorsNameList;
+            $supervisors = is_array($annaUniversityRecognizedSuperviorsNameList ?? null) ? $annaUniversityRecognizedSuperviorsNameList : [];
         @endphp
-        @if(is_array($supervisors) && count($supervisors) > 0)
+        @if(count($supervisors) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="research-section">
@@ -154,12 +151,10 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- PhD Candidates Pursuing -->
-        @if(!empty($data->listOfCandidatesPursuingPhdUnderDepartmentSupervisors))
         @php
-            $candidates = is_string($data->listOfCandidatesPursuingPhdUnderDepartmentSupervisors) ? json_decode($data->listOfCandidatesPursuingPhdUnderDepartmentSupervisors, true) : $data->listOfCandidatesPursuingPhdUnderDepartmentSupervisors;
+            $candidates = is_array($listOfCandidatesPursuingPhdUnderDepartmentSupervisors ?? null) ? $listOfCandidatesPursuingPhdUnderDepartmentSupervisors : [];
             // Sort by yearOfRegistration in descending order (newest first) - handles multiple records
             if (is_array($candidates) && count($candidates) > 0) {
                 usort($candidates, function($a, $b) {
@@ -232,12 +227,10 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Department Faculties Pursuing PhD -->
-        @if(!empty($data->listOfDepartmentFacultiesPursuingPhd))
         @php
-            $facultyPhd = is_string($data->listOfDepartmentFacultiesPursuingPhd) ? json_decode($data->listOfDepartmentFacultiesPursuingPhd, true) : $data->listOfDepartmentFacultiesPursuingPhd;
+            $facultyPhd = is_array($listOfDepartmentFacultiesPursuingPhd ?? null) ? $listOfDepartmentFacultiesPursuingPhd : [];
             // Sort by yearOfRegistration in descending order (newest first) - handles multiple records
             if (is_array($facultyPhd) && count($facultyPhd) > 0) {
                 usort($facultyPhd, function($a, $b) {
@@ -310,12 +303,10 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- PhD Awarded Under Department Supervisor -->
-        @if(!empty($data->phdAwardedUnderDepartmentSupervisor))
         @php
-            $phdAwarded = is_string($data->phdAwardedUnderDepartmentSupervisor) ? json_decode($data->phdAwardedUnderDepartmentSupervisor, true) : $data->phdAwardedUnderDepartmentSupervisor;
+            $phdAwarded = is_array($phdAwardedUnderDepartmentSupervisor ?? null) ? $phdAwardedUnderDepartmentSupervisor : [];
             // Sort by vivaVoceDate year in descending order (newest first) - handles multiple records
             if (is_array($phdAwarded) && count($phdAwarded) > 0) {
                 usort($phdAwarded, function($a, $b) {
@@ -384,10 +375,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- No Data Message -->
-        @if(empty($data->phdHoldersList) && empty($data->annaUniversityRecognizedSuperviorsNameList) && empty($data->listOfCandidatesPursuingPhdUnderDepartmentSupervisors) && empty($data->listOfDepartmentFacultiesPursuingPhd) && empty($data->phdAwardedUnderDepartmentSupervisor))
+        @if(empty($phdHolders) && empty($supervisors) && empty($candidates) && empty($facultyPhd) && empty($phdAwarded))
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">

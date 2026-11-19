@@ -38,7 +38,7 @@ class PublicationsController extends Controller
             $data['view']   = $this->view;
             $data['path']   = $this->path;
             $data['access'] = $this->access;
-            $data['baseurl'] = config('app.url');
+            $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
 
             $data['publications'] = Publications::all(); // Example: Fetch all publications.
 
@@ -59,7 +59,7 @@ class PublicationsController extends Controller
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['departmentId'] = $departmentId;
         $data['section'] = $section;
 

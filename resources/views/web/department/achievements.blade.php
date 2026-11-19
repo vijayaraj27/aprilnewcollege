@@ -1,43 +1,46 @@
 @extends('web.layouts.department')
 
 @section('page-icon', 'fa-trophy')
-@section('page-description', 'Celebrating Excellence and Success')
+@section('page-description', 'Staff and Student Achievements')
 
 @section('main-content')
-<!-- Achievements Section -->
-<section class="py-5 bg-light">
-    <div class="container">
+<section class="section-padding">
+    <div class="container-fluid px-3 px-lg-4">
         <!-- Page Title and Description -->
         @if(!empty($data->title))
         <div class="row mb-5">
-            <div class="col-12 text-center">
-                <h1 class="page-title fw-bold text-primary mb-3 animate-fade-in">{{ $data->title }}</h1>
+            <div class="col-md-12 text-center">
+                <h1 class="page-title">{{ $data->title }}</h1>
                 @if(!empty($data->description))
-                <p class="page-description lead text-muted animate-slide-up">{!! $data->description !!}</p>
+                <div class="page-description">{!! $data->description !!}</div>
                 @endif
             </div>
         </div>
         @endif
 
-        <!-- Achievement Image -->
+        <!-- Achievements Image -->
         @if(!empty($data->imageFile))
         <div class="row mb-5">
-            <div class="col-12 text-center">
-                <div class="achievement-banner-container animate-fade-in-up">
-                    <img src="{{ asset('uploads/achievements/' . $data->imageFile) }}" 
-                         alt="Department Achievements" 
-                         class="img-fluid rounded-3 shadow-lg achievement-banner">
-                </div>
+            <div class="col-md-12 text-center">
+                <img src="{{ asset('uploads/achievements/' . $data->imageFile) }}"
+                     alt="Department Achievements"
+                     class="img-fluid rounded shadow-lg infrastructure-banner">
             </div>
         </div>
         @endif
 
-        <!-- Staff Achievements -->
-        @if(!empty($data->staffAchievements))
         @php
-            $staffAchievements = is_string($data->staffAchievements) ? json_decode($data->staffAchievements, true) : $data->staffAchievements;
+            $staffAchievements = $staffAchievements ?? collect();
+            if (!($staffAchievements instanceof \Illuminate\Support\Collection)) {
+                $staffAchievements = collect($staffAchievements);
+            }
+            $studentAchievements = is_array($studentAchievements ?? null) ? $studentAchievements : [];
+            $tableAchievements = is_array($studentAchievementsTableFormat ?? null) ? $studentAchievementsTableFormat : [];
+            $appreciationList = is_array($studentAchievementsAppeciationList ?? null) ? $studentAchievementsAppeciationList : [];
         @endphp
-        @if(is_array($staffAchievements) && count($staffAchievements) > 0)
+
+        <!-- Staff Achievements -->
+        @if($staffAchievements->isNotEmpty())
         <div class="row mb-5">
             <div class="col-12">
                 <div class="achievements-section">
@@ -49,6 +52,11 @@
                     </div>
                     <div class="row g-4">
                         @foreach($staffAchievements as $index => $achievement)
+                        @php
+                            $text = is_object($achievement)
+                                ? ($achievement->description ?? $achievement->title ?? '')
+                                : (is_string($achievement) ? $achievement : ($achievement['description'] ?? $achievement['title'] ?? ''));
+                        @endphp
                         <div class="col-lg-6">
                             <div class="achievement-item p-4 border-0 rounded-3 shadow-sm h-100 animate-fade-in-up" style="animation-delay: {{ $index * 0.1 }}s;">
                                 <div class="achievement-content">
@@ -56,7 +64,7 @@
                                         <span class="achievement-number badge bg-primary rounded-circle p-3 me-3 fw-bold">{{ $index + 1 }}</span>
                                     </div>
                                     <div class="achievement-text">
-                                        <p class="text-muted lh-lg mb-0">{{ $achievement }}</p>
+                                        <p class="text-muted lh-lg mb-0">{{ $text }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -67,27 +75,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Student Achievements -->
-        @if(!empty($data->studentAchievements))
-        @php
-            $studentAchievements = is_string($data->studentAchievements) ? json_decode($data->studentAchievements, true) : $data->studentAchievements;
-            // Sort by year in descending order (newest first) - handles multiple years and multiple records per year
-            if (is_array($studentAchievements) && count($studentAchievements) > 0) {
-                usort($studentAchievements, function($a, $b) {
-                    $yearA = isset($a['year']) && !empty($a['year']) ? (string)$a['year'] : '0000';
-                    $yearB = isset($b['year']) && !empty($b['year']) ? (string)$b['year'] : '0000';
-                    // Extract first year from formats like "2023-24" or "2020-21"
-                    preg_match('/(\d{4})/', $yearA, $matchA);
-                    preg_match('/(\d{4})/', $yearB, $matchB);
-                    $numA = isset($matchA[1]) ? (int)$matchA[1] : 0;
-                    $numB = isset($matchB[1]) ? (int)$matchB[1] : 0;
-                    return $numB - $numA; // Descending order (newest first)
-                });
-            }
-        @endphp
-        @if(is_array($studentAchievements) && count($studentAchievements) > 0)
+        @if(count($studentAchievements) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="achievements-section">
@@ -125,36 +115,18 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Student Achievements Table Format -->
-        @if(!empty($data->studentAchievementsTableFormat))
-        @php
-            $tableAchievements = is_string($data->studentAchievementsTableFormat) ? json_decode($data->studentAchievementsTableFormat, true) : $data->studentAchievementsTableFormat;
-            // Sort by year in descending order (newest first) - handles multiple years and multiple records per year
-            if (is_array($tableAchievements) && count($tableAchievements) > 0) {
-                usort($tableAchievements, function($a, $b) {
-                    $yearA = isset($a['year']) && !empty($a['year']) ? (string)$a['year'] : '0000';
-                    $yearB = isset($b['year']) && !empty($b['year']) ? (string)$b['year'] : '0000';
-                    // Extract first year from formats like "2023-24" or "2020-21"
-                    preg_match('/(\d{4})/', $yearA, $matchA);
-                    preg_match('/(\d{4})/', $yearB, $matchB);
-                    $numA = isset($matchA[1]) ? (int)$matchA[1] : 0;
-                    $numB = isset($matchB[1]) ? (int)$matchB[1] : 0;
-                    return $numB - $numA; // Descending order (newest first)
-                });
-            }
-        @endphp
-        @if(is_array($tableAchievements) && count($tableAchievements) > 0)
+        @if(count($tableAchievements) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="achievements-section">
                     <h2 class="section-title text-center mb-4">
-                        <i class="fa fa-table text-warning"></i> Student Achievements
+                        <i class="fa fa-table text-primary"></i> Student Achievements (Table)
                     </h2>
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="thead-dark">
+                        <table class="table table-bordered table-striped">
+                            <thead>
                                 <tr>
                                     <th>Year</th>
                                     <th>Student Name</th>
@@ -192,27 +164,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- Student Achievements Appreciation List -->
-        @if(!empty($data->studentAchievementsAppeciationList))
-        @php
-            $appreciationList = is_string($data->studentAchievementsAppeciationList) ? json_decode($data->studentAchievementsAppeciationList, true) : $data->studentAchievementsAppeciationList;
-            // Sort by year in descending order (newest first) - handles multiple years and multiple records per year
-            if (is_array($appreciationList) && count($appreciationList) > 0) {
-                usort($appreciationList, function($a, $b) {
-                    $yearA = isset($a['year']) && !empty($a['year']) ? (string)$a['year'] : '0000';
-                    $yearB = isset($b['year']) && !empty($b['year']) ? (string)$b['year'] : '0000';
-                    // Extract first year from formats like "2023-24" or "2020-21"
-                    preg_match('/(\d{4})/', $yearA, $matchA);
-                    preg_match('/(\d{4})/', $yearB, $matchB);
-                    $numA = isset($matchA[1]) ? (int)$matchA[1] : 0;
-                    $numB = isset($matchB[1]) ? (int)$matchB[1] : 0;
-                    return $numB - $numA; // Descending order (newest first)
-                });
-            }
-        @endphp
-        @if(is_array($appreciationList) && count($appreciationList) > 0)
+        @if(count($appreciationList) > 0)
         <div class="row mb-5">
             <div class="col-md-12">
                 <div class="achievements-section">
@@ -227,34 +181,36 @@
                                     <i class="fa fa-calendar text-info"></i> {{ $yearData['year'] }}
                                 </h3>
                                 @if(isset($yearData['appreciations']) && is_array($yearData['appreciations']))
-                                <div class="appreciations-grid">
+                                <div class="row g-4 appreciations-grid">
                                     @foreach($yearData['appreciations'] as $appreciation)
-                                    <div class="appreciation-item p-3 mb-3 border rounded bg-light">
-                                        <div class="appreciation-content">
-                                            @if(!empty($appreciation['studentName']))
-                                            <h5 class="appreciation-student">
-                                                <i class="fa fa-user text-primary"></i> {{ $appreciation['studentName'] }}
-                                            </h5>
-                                            @endif
-                                            <div class="appreciation-details small text-muted">
-                                                @if(!empty($appreciation['yearOfStudent']))
-                                                <div><strong>Year:</strong> {{ $appreciation['yearOfStudent'] }}</div>
+                                    <div class="col-lg-6">
+                                        <div class="appreciation-item p-3 border rounded bg-light h-100">
+                                            <div class="appreciation-content">
+                                                @if(!empty($appreciation['studentName']))
+                                                <h5 class="appreciation-student">
+                                                    <i class="fa fa-user text-primary"></i> {{ $appreciation['studentName'] }}
+                                                </h5>
                                                 @endif
-                                                @if(!empty($appreciation['eventName']))
-                                                <div><strong>Event:</strong> {{ $appreciation['eventName'] }}</div>
-                                                @endif
-                                                @if(!empty($appreciation['projectName']))
-                                                <div><strong>Project:</strong> {{ $appreciation['projectName'] }}</div>
-                                                @endif
-                                                @if(!empty($appreciation['supervisor']))
-                                                <div><strong>Supervisor:</strong> {{ $appreciation['supervisor'] }}</div>
-                                                @endif
-                                                @if(!empty($appreciation['status']))
-                                                <div><strong>Status:</strong> {{ $appreciation['status'] }}</div>
-                                                @endif
-                                                @if(!empty($appreciation['achievement']))
-                                                <div><strong>Achievement:</strong> {{ $appreciation['achievement'] }}</div>
-                                                @endif
+                                                <div class="appreciation-details small text-muted">
+                                                    @if(!empty($appreciation['yearOfStudent']))
+                                                    <div><strong>Year:</strong> {{ $appreciation['yearOfStudent'] }}</div>
+                                                    @endif
+                                                    @if(!empty($appreciation['eventName']))
+                                                    <div><strong>Event:</strong> {{ $appreciation['eventName'] }}</div>
+                                                    @endif
+                                                    @if(!empty($appreciation['projectName']))
+                                                    <div><strong>Project:</strong> {{ $appreciation['projectName'] }}</div>
+                                                    @endif
+                                                    @if(!empty($appreciation['supervisor']))
+                                                    <div><strong>Supervisor:</strong> {{ $appreciation['supervisor'] }}</div>
+                                                    @endif
+                                                    @if(!empty($appreciation['status']))
+                                                    <div><strong>Status:</strong> {{ $appreciation['status'] }}</div>
+                                                    @endif
+                                                    @if(!empty($appreciation['achievement']))
+                                                    <div><strong>Achievement:</strong> {{ $appreciation['achievement'] }}</div>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -269,10 +225,9 @@
             </div>
         </div>
         @endif
-        @endif
 
         <!-- No Data Message -->
-        @if(empty($data->staffAchievements) && empty($data->studentAchievements) && empty($data->studentAchievementsTableFormat) && empty($data->studentAchievementsAppeciationList))
+        @if($staffAchievements->isEmpty() && count($studentAchievements) === 0 && count($tableAchievements) === 0 && count($appreciationList) === 0)
         <div class="row">
             <div class="col-md-12">
                 <div class="no-data-message text-center py-5">

@@ -186,7 +186,7 @@ class DashboardController extends Controller
      // exit;
       $data['title'] = " Department Section ";
       $department = Department::where('slug', $slug)->first();
-      $data['baseurl'] = config('app.url');
+      $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
      // $data['adminUrl'] = route('admin.index');
       $data['department'] =  $department;
       if (!$department) {      

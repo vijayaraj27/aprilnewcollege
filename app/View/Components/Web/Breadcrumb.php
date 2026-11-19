@@ -10,6 +10,7 @@ class Breadcrumb extends Component
     public $items;
     public $background;
     public $class;
+    public $variant;
 
     /**
      * Create a new component instance.
@@ -18,13 +19,15 @@ class Breadcrumb extends Component
      * @param array $items
      * @param string $background
      * @param string $class
+     * @param string $variant  default|simple
      */
-    public function __construct($title = '', $items = [], $background = 'linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%)', $class = '')
+    public function __construct($title = '', $items = [], $background = 'linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%)', $class = '', $variant = 'default')
     {
         $this->title = $title;
         $this->items = $items;
         $this->background = $background;
         $this->class = $class;
+        $this->variant = $variant ?: 'default';
     }
 
     /**

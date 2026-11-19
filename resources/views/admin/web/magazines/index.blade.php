@@ -8,19 +8,18 @@
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
-                    @if($section === 'basic')
+                    @if(($section ?? 'basic') === 'basic')
                     <div class="card-header">
                         <h3 class="bold">Section Magazines </h3>
                     </div>
 
-                    <!-- Department Magazines Section Main Section -->
                     <div class="card-block">
                         <form id="magazinesForm" class="needs-validation" method="POST"
                             action="{{ route($route . '.store', ['departmentId' => $departmentId, 'section' => $section]) }}"
                             enctype="multipart/form-data">
                             @csrf
                             <div class="row">
-                                <div class="form-group col-md-6">l
+                                <div class="form-group col-md-6">
                                     <label for="photo">{{ __('field_photo') }}:
                                         <span>{{ __('image_size', ['height' => 400, 'width' => 400]) }}</span>
                                         <span>*</span></label> <input type="file" class="form-control" name="imageFile"
@@ -45,139 +44,11 @@
                         </form>
                     </div>
                     @endif
-
-
-                    @if($section === 'magazines')
-                    <!-- Magazines  List -->
-                    <div class="card-header">
-                        <h3 class="bold">Magazines List</h3>
-                    </div>
-                    <div class="card-block">
-                        <form id="studentPlacedForm" class="needs-validation" method="POST"
-                            action="{{ route($route . '.store', ['departmentId' => $departmentId, 'section' => $section]) }}">
-                            @csrf
-                            <div class="row">
-                                <!-- Magazines  List Section -->
-                                <div id="studentPlacedContainer" class="col-md-12">
-                                    <h4>Magazines List</h4>
-                                    @php
-                                    // Use the already decoded data from controller
-                                    // Note: $magazinesList is already decoded in controller
-                                    $magazinesList = $magazinesList ?? [];
-                                    $magazinesList = array_values($magazinesList ?? []);
-
-                                    @endphp
-
-                                    <div class="student-achievement-appreciation-year-entry mb-4"
-                                        id="studentPlacedYearEntry">
-                                        <div class="year-appreciations-container">
-                                            @if(!empty($magazinesList))
-                                            @foreach($magazinesList as $index => $magazines)
-                                            <div class="student-achievement-appreciation-entry row mb-2"
-                                                id="studentAchievementAppreciationEntry_{{ $index }}">
-                                                @foreach(['year' => 'Year (Format: 2023-24)', 'pdfLink' => 'PDF Link'] as $key => $placeholder)
-                                                <div class="form-group col-md-4">
-                                                    @if($key === 'year')
-                                                    <label for="magazineYear_{{ $index }}">Year <small class="text-muted">(Format: 2023-24 or 2020-21)</small></label>
-                                                    <input type="text" class="form-control" id="magazineYear_{{ $index }}"
-                                                        name="magazines[{{ $index }}][{{ $key }}]"
-                                                        placeholder="e.g., 2023-24"
-                                                        value="{{ $magazines[$key] ?? '' }}" required>
-                                                    <small class="form-text text-muted">Please use format: YYYY-YY (e.g., 2023-24, 2020-21)</small>
-                                                    @else
-                                                    <label for="magazineLink_{{ $index }}">{{ $placeholder }}</label>
-                                                    <input type="text" class="form-control" id="magazineLink_{{ $index }}"
-                                                        name="magazines[{{ $index }}][{{ $key }}]"
-                                                        placeholder="{{ $placeholder }}"
-                                                        value="{{ $magazines[$key] ?? '' }}" required>
-                                                    @endif
-                                                </div>
-                                                @endforeach
-                                                <div class="form-group col-md-2 text-end">
-                                                    <button type="button" class="btn btn-danger"
-                                                        onclick="removeAchievementAppreciation(this)">Remove</button>
-                                                </div>
-                                            </div>
-                                            @endforeach
-                                            @endif
-                                        </div>
-
-                                        <!-- Add Magazines Link Button (Visible Always) -->
-                                        <div class="text-end">
-                                            <button type="button" class="btn btn-info"
-                                                onclick="addAchievementAppreciation(this)">Add Magazines Link</button>
-                                        </div>
-                                    </div>
-                                    @if(empty($magazinesList))
-                                    <div class="alert alert-info">
-                                        <p>No magazines found. Please add a new one.</p>
-                                    </div>
-                                    @endif
-
-
-
-
-                                </div>
-
-
-
-
-                            </div>
-                            <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-success">Save Magazines
-                                    list </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <script>
-                    function addAchievementAppreciation(button) {
-                        const container = document.querySelector('.year-appreciations-container');
-                        if (!container) {
-                            alert('Container for Magazines links is missing.');
-                            return;
-                        }
-
-                        // Calculate new index dynamically
-                        const appreciationIndex = [...container.querySelectorAll(
-                            '.student-achievement-appreciation-entry')].length;
-
-                        const newAchievement = `
-                            <div class="student-achievement-appreciation-entry row mb-2" id="studentAchievementAppreciationEntry_${appreciationIndex}">
-                                <div class="form-group col-md-4">
-                                    <label>Year <small class="text-muted">(Format: 2023-24 or 2020-21)</small></label>
-                                    <input type="text" class="form-control" name="magazines[${appreciationIndex}][year]" placeholder="e.g., 2023-24" required>
-                                    <small class="form-text text-muted">Please use format: YYYY-YY (e.g., 2023-24, 2020-21)</small>
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label>PDF Link</label>
-                                    <input type="text" class="form-control" name="magazines[${appreciationIndex}][pdfLink]" placeholder="PDF Link" required>
-                                </div>
-                                <div class="form-group col-md-2 text-end">
-                                    <button type="button" class="btn btn-danger" onclick="removeAchievementAppreciation(this)">Remove</button>
-                                </div>
-                            </div>`;
-                        container.insertAdjacentHTML('beforeend', newAchievement);
-                    }
-
-
-
-                    // Remove an achievement
-                    function removeAchievementAppreciation(button) {
-                        if (confirm('Are you sure you want to remove this entry?')) {
-                            button.closest('.student-achievement-appreciation-entry').remove();
-                        }
-                    }
-                    </script>
-                    @endif
-
-
                 </div>
             </div>
         </div>
     </div>
 </div>
 <!-- End Content-->
-
 
 @endsection

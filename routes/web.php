@@ -51,7 +51,13 @@ Route::middleware(['XSS'])->namespace('Web')->group(function () {
     
     // IQAC Sub-pages Route - Must be before general page route
     Route::get('/iqac/{subpage}', 'PageController@showIQACSubPage')->name('iqac.subpage');
-    
+
+    Route::get('/all-faculties', function () {
+        return response()->file(public_path('all-faculties.html'), [
+            'Content-Type' => 'text/html; charset=UTF-8',
+        ]);
+    })->name('all-faculties');
+
     // Page Routes - Must be last to avoid conflicts with other routes
     Route::get('/{slug}', 'PageController@show')->name('page.single');
 });
@@ -365,6 +371,22 @@ Route::middleware(['auth:web', 'XSS'])->name('admin.')->namespace('Admin')->pref
     // Front Web Routes
     Route::prefix('web')->namespace('Web')->group(function () {
         Route::resource('slider', 'SliderController');
+        Route::resource('programme-outcome', 'ProgrammeOutcomeController');
+        Route::resource('faculty-member', 'FacultyMemberController');
+        Route::resource('infrastructure-item', 'InfrastructureItemController');
+        Route::resource('achievement-item', 'AchievementItemController');
+        Route::resource('placement-item', 'PlacementItemController');
+        Route::resource('video-item', 'VideoItemController');
+        Route::resource('course-item', 'CourseItemController');
+        Route::resource('newsletter-item', 'NewsletterItemController');
+        Route::resource('magazine-item', 'MagazineItemController');
+        Route::resource('syllabus-item', 'SyllabusItemController');
+        Route::resource('library-item', 'LibraryItemController');
+        Route::resource('research-item', 'ResearchItemController');
+        Route::resource('publication-item', 'PublicationItemController');
+        Route::resource('activity-item', 'ActivityItemController');
+        Route::resource('event-item', 'EventItemController');
+        Route::resource('events', 'EventsController');
         Route::resource('feature', 'FeatureController');
         Route::resource('about-us', 'AboutUsController');
         Route::resource('achievements', 'AchievementsController');
@@ -391,6 +413,8 @@ Route::middleware(['auth:web', 'XSS'])->name('admin.')->namespace('Admin')->pref
         Route::resource('faq', 'FaqController');
         Route::resource('testimonial', 'TestimonialController');
         Route::resource('page', 'PageController');
+        Route::resource('menu-manager', 'MenuManagerController')->except(['show']);
+        Route::resource('footer-menu', 'FooterMenuController')->except(['show']);
         Route::resource('call-to-action', 'CallToActionController');
         Route::resource('social-setting', 'SocialSettingController');
         Route::resource('topbar-setting', 'TopbarSettingController');

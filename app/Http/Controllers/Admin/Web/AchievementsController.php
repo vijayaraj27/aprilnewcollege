@@ -4,7 +4,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Traits\FileUploader;
 use App\Models\Web\Achievements;
-use App\Models\Language;
+use App\Models\Web\AchievementItem;
 use Toastr;
 use Auth;
 class AchievementsController extends Controller
@@ -38,9 +38,9 @@ class AchievementsController extends Controller
             $data['view']   = $this->view;
             $data['path']   = $this->path;
             $data['access'] = $this->access;
-            $data['baseurl'] = config('app.url');
+            $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
 
-            $data['achievements'] = Achievements::all(); // Example: Fetch all achievements.
+            $data['achievements'] = Achievements::all();
 
             return view($this->view.'.index', $data);
         }
@@ -50,14 +50,21 @@ class AchievementsController extends Controller
     {
         $result = explode('_', $slug);
         $departmentId = $result[0];
-        $section= $result[1];
+        $section= $result[1] ?? 'basic';
+
+        if (isset(AchievementItem::SECTION_TYPE_MAP[$section])) {
+            return redirect()->route('admin.achievement-item.index', [
+                'department_id' => $departmentId,
+                'type' => AchievementItem::SECTION_TYPE_MAP[$section],
+            ]);
+        }
 
         $data['title']  = $this->title;
         $data['route']  = $this->route;
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['departmentId'] = $departmentId;
         $data['section'] = $section;
 
@@ -65,7 +72,6 @@ class AchievementsController extends Controller
         $query->where('departmentId', $departmentId);
         $data['row'] =  $query->first();
 
-        // echo '<pre>';print_r($data['row']);exit;
         return view($this->view.'.index', $data);
     }
     /**
@@ -95,56 +101,15 @@ class AchievementsController extends Controller
         }
 
         if($request->section === 'basic'){
-            //echo "Two "; exit;
-            // Handle the image upload if the file exists
             if ($request->hasFile('imageFile')) {            
                 $Achievements->imageFile = $this->uploadImage($request, 'imageFile', $this->path, null, 800);                 
             }
 
             $Achievements->title = $request->title;
             $Achievements->description = $request->description;            
-        }else if($request->section === 'staff-achivements'){
-            $Achievements->staffAchievements = json_encode($request->staffAchievements, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'student-achivements'){
-            // Get the submitted data
-            $studentAchievements = $request->input('studentAchievements');
-        
-           // Check if studentAchievements exists and is an array
-                if (is_array($studentAchievements)) {
-                    foreach ($studentAchievements as $yearIndex => $yearData) {
-                        // Check if 'achievements' key exists and is an array
-                        if (isset($yearData['achievements']) && is_array($yearData['achievements'])) {
-                            foreach ($yearData['achievements'] as $achievementIndex => $achievement) {
-                                
-                                // Construct the dynamic file input name
-                                $fileInputName = "studentAchievements.{$yearIndex}.achievements.{$achievementIndex}.image";
-
-                                // Check if the file exists in the request
-                                if ($request->hasFile($fileInputName)) {
-                                    // Call the uploadImage function and get the new file name
-                                    $uploadedFileName = $this->uploadImage($request->file($fileInputName),$fileInputName, $this->path, null, 800);
-
-                                    // Update the 'image' key with the uploaded file name
-                                    $studentAchievements[$yearIndex]['achievements'][$achievementIndex]['image'] = $uploadedFileName;
-                                } else {
-                                    // Preserve the existing image if no new file is uploaded
-                                    $existingData = $request->input("existingStudentAchievements");
-                                    if (isset($existingData[$yearIndex]['achievements'][$achievementIndex]['image'])) {
-                                        $studentAchievements[$yearIndex]['achievements'][$achievementIndex]['image'] =
-                                            $existingData[$yearIndex]['achievements'][$achievementIndex]['image'];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            $request->merge(['studentAchievements' => $studentAchievements]);
-            $Achievements->studentAchievements = json_encode($studentAchievements, JSON_UNESCAPED_UNICODE);
-        }
-        else if($request->section === 'student-achivements-table'){
-            $Achievements->studentAchievementsTableFormat = json_encode($request->studentAchievementsTableFormat, JSON_UNESCAPED_UNICODE);
-        }else if($request->section === 'student-achivements-appreciation'){
-            $Achievements->studentAchievementsAppeciationList = json_encode($request->studentAchievementsAppreciation, JSON_UNESCAPED_UNICODE);
+        } else {
+            Toastr::error(__('These achievements are managed from the Achievement Item CRUD pages.'), __('msg_error'));
+            return redirect()->back();
         }
 
         $Achievements->save();

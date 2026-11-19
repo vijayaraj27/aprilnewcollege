@@ -41,7 +41,7 @@ class FacultiesController extends Controller
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['faculties'] = Faculties::all(); // Example: Fetch all faculties.
 
         return view($this->view.'.index', $data);
@@ -56,14 +56,28 @@ class FacultiesController extends Controller
     {
         $result = explode('_', $slug);
         $departmentId = $result[0];
-        $section = $result[1];
+        $section = $result[1] ?? 'basic';
+
+        // Staff lists moved to dedicated CRUD
+        if ($section === 'teaching-staff') {
+            return redirect()->route('admin.faculty-member.index', [
+                'department_id' => $departmentId,
+                'type' => 'teaching',
+            ]);
+        }
+        if ($section === 'non-teaching-staff') {
+            return redirect()->route('admin.faculty-member.index', [
+                'department_id' => $departmentId,
+                'type' => 'non-teaching',
+            ]);
+        }
 
         $data['title']  = $this->title;
         $data['route']  = $this->route;
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['departmentId'] = $departmentId;
         $data['section'] = $section;
 
@@ -89,8 +103,6 @@ class FacultiesController extends Controller
             'imageFile' => 'nullable|image|max:2048', // Adjust as necessary
             'title' => 'nullable|string',
             'description' => 'nullable|string',
-            'teachingStaff' => 'nullable|array',
-            'nonTeachingStaff' => 'nullable|array',
         ];
     
         $validated = $request->validate($rules);
@@ -99,27 +111,16 @@ class FacultiesController extends Controller
         $Faculties = Faculties::firstOrNew(['departmentId' => $request->departmentId]);
         $message = $Faculties->exists ? 'Record updated successfully' : 'Record created successfully';
     
-        // Handle 'basic' section
+        // Handle 'basic' section only (staff lists use faculty-member CRUD)
         if ($request->section === 'basic') {
             if ($request->hasFile('imageFile')) {
                 $Faculties->imageFile = $this->uploadImage($request, 'imageFile', $this->path, null, 800);
             }
             $Faculties->title = $request->title;
             $Faculties->description = $request->description;
-        }
-    
-        // Handle 'teaching-staff' section
-        elseif ($request->section === 'teaching-staff') {
-                // Re-index array to remove any gaps from deleted entries
-                $teachingStaffData = array_values($request->teachingStaffData ?? []);
-                $Faculties->teachingStaff = json_encode($teachingStaffData, JSON_UNESCAPED_UNICODE);
-        }
-    
-        // Handle 'non-teaching-staff' section
-        elseif ($request->section === 'non-teaching-staff') {
-                // Re-index array to remove any gaps from deleted entries
-                $nonTeachingStaffData = array_values($request->nonTeachingStaffData ?? []);
-                $Faculties->nonTeachingStaff = json_encode($nonTeachingStaffData, JSON_UNESCAPED_UNICODE);
+        } else {
+            Toastr::error(__('Staff lists are managed from the Teaching / Non-Teaching CRUD pages.'), __('msg_error'));
+            return redirect()->back();
         }
     
         // Save the record

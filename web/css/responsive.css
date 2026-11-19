@@ -190,7 +190,8 @@
   /* Normal desktop :992px. */
   @media (min-width: 992px) and (max-width: 1200px) {
       .breadcrumb-area {
-      min-height: 250px;
+      height: 400px;
+      min-height: 400px;
   
   }
           .about-content2 li .ano {
@@ -634,6 +635,10 @@
   
   /* Tablet desktop :768px. */
   @media (min-width: 768px) and (max-width: 991px) {
+      .breadcrumb-area {
+          height: 320px;
+          min-height: 320px;
+      }
       .event03 .event-content, .event03 .event-item {
     width: 100%;
   }
@@ -1089,11 +1094,23 @@
       background: #FFFFFF 0% 0% no-repeat padding-box;
   box-shadow: 3px 4px 15px #0000001A;
           position: absolute;
+          left: 0;
+          right: 0;
+          width: 100%;
+          z-index: 999;
+          max-height: calc(100vh - 110px);
+          max-height: calc(100dvh - 110px);
+          overflow-x: hidden;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+          padding-bottom: 24px;
+          box-sizing: border-box;
   }
     .mean-container .mean-nav ul li a.mean-expand {
       text-align: right;
       top: 0;
-      width: 100%;
+      width: 26px;
       z-index: 2;
       padding: 9px 12px;
   }
@@ -1101,8 +1118,49 @@
       background: rgba(0, 0, 0, 0);
   }
   .mean-container .mean-nav ul {
-      overflow: hidden;
+      overflow: visible;
       display:block;
+      padding-bottom: 40px;
+  }
+  .mean-container .mean-nav ul li {
+      float: none !important;
+      display: block !important;
+      width: 100% !important;
+  }
+  .mean-container .mean-nav ul li > a {
+      float: none !important;
+      display: block !important;
+      width: auto !important;
+      padding-right: 50px !important;
+      box-sizing: border-box;
+  }
+  .mean-container .mean-nav ul ul {
+      position: static !important;
+      left: auto !important;
+      right: auto !important;
+      top: auto !important;
+      float: none !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      background: #f3f3f3 !important;
+      box-shadow: none !important;
+  }
+  .mean-container .mean-nav ul ul li {
+      width: 100% !important;
+      float: none !important;
+      background: transparent !important;
+  }
+  .mean-container .mean-nav ul ul li > a {
+      color: #333 !important;
+      background: transparent !important;
+      float: none !important;
+      display: block !important;
+      width: auto !important;
+      padding: 10px 12px 10px 8% !important;
+  }
+  .mean-container .mean-nav ul li:hover > ul,
+  .mean-container .mean-nav ul ul li:hover > ul {
+      display: none;
   }
   .menu .page_item_has_children > ul > .page_item_has_children:hover > ul {
       margin-left: 0;
@@ -1740,11 +1798,23 @@
       background: #FFFFFF 0% 0% no-repeat padding-box;
   box-shadow: 3px 4px 15px #0000001A;
           position: absolute;
+          left: 0;
+          right: 0;
+          width: 100%;
+          z-index: 999;
+          max-height: calc(100vh - 110px);
+          max-height: calc(100dvh - 110px);
+          overflow-x: hidden;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+          padding-bottom: 24px;
+          box-sizing: border-box;
   }
     .mean-container .mean-nav ul li a.mean-expand {
       text-align: right;
       top: 0;
-      width: 100%;
+      width: 26px;
       z-index: 2;
       padding: 9px 12px;
   }
@@ -1752,8 +1822,49 @@
       background: rgba(0, 0, 0, 0);
   }
   .mean-container .mean-nav ul {
-      overflow: hidden;
+      overflow: visible;
       display:block;
+      padding-bottom: 40px;
+  }
+  .mean-container .mean-nav ul li {
+      float: none !important;
+      display: block !important;
+      width: 100% !important;
+  }
+  .mean-container .mean-nav ul li > a {
+      float: none !important;
+      display: block !important;
+      width: auto !important;
+      padding-right: 50px !important;
+      box-sizing: border-box;
+  }
+  .mean-container .mean-nav ul ul {
+      position: static !important;
+      left: auto !important;
+      right: auto !important;
+      top: auto !important;
+      float: none !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      background: #f3f3f3 !important;
+      box-shadow: none !important;
+  }
+  .mean-container .mean-nav ul ul li {
+      width: 100% !important;
+      float: none !important;
+      background: transparent !important;
+  }
+  .mean-container .mean-nav ul ul li > a {
+      color: #333 !important;
+      background: transparent !important;
+      float: none !important;
+      display: block !important;
+      width: auto !important;
+      padding: 10px 12px 10px 8% !important;
+  }
+  .mean-container .mean-nav ul li:hover > ul,
+  .mean-container .mean-nav ul ul li:hover > ul {
+      display: none;
   }
   .menu .page_item_has_children > ul > .page_item_has_children:hover > ul {
       margin-left: 0;
@@ -2599,7 +2710,8 @@
   }
   .breadcrumb-area {
       background-position: 0 0;
-     min-height: 150px;
+     height: 240px;
+     min-height: 240px;
   }
   
   .details__content h2 {

@@ -8,12 +8,11 @@
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
-                    @if($section === 'basic')
+                    @if(($section ?? 'basic') === 'basic')
                     <div class="card-header">
                         <h3 class="bold">General Library Section </h3>
                     </div>
 
-                    <!-- Department Library  Section -->
                     <div class="card-block">
                         <form id="libraryForm" class="needs-validation" method="POST"
                             action="{{ route($route . '.store', ['departmentId' => $departmentId, 'section' => $section]) }}"
@@ -46,13 +45,11 @@
                     </div>
                     @endif
 
-
-                    @if($section === 'sectionAbout')
+                    @if(($section ?? '') === 'sectionAbout')
                     <div class="card-header">
                         <h3 class="bold">Second Library Section </h3>
                     </div>
 
-                    <!-- Department Library  Section -->
                     <div class="card-block">
                         <form id="secondLibraryForm" class="needs-validation" method="POST"
                             action="{{ route($route . '.store', ['departmentId' => $departmentId, 'section' => $section]) }}"
@@ -80,96 +77,11 @@
                         </form>
                     </div>
                     @endif
-
-
-                    @if($section === 'record')
-                    <!-- Library s List -->
-                    <div class="card-header">
-                        <h3 class="bold">Department Library Books List</h3>
-                    </div>
-                    <div class="card-block">
-                        <form id="booksForm" method="POST"
-                            action="{{ route($route . '.store', ['departmentId' => $departmentId, 'section' => $section]) }}">
-                            @csrf
-                            <div id="booksContainer" class="col-md-12">
-                                <h4>Books List</h4>
-                                @php
-                                // Use the already decoded data from controller
-                                $booksList = $record ?? [];
-                                @endphp
-
-                                <div id="booksEntries">
-                                    @if(!empty($booksList))
-                                    @foreach($booksList as $index => $book)
-                                    <div class="row mb-2 book-entry" id="bookEntry_{{ $index }}">
-                                        <div class="form-group col-md-6">
-                                            <input type="text" class="form-control" name="record[{{ $index }}][title]"
-                                                placeholder="Book Title" value="{{ $book['title'] ?? '' }}" required>
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <input type="number" class="form-control"
-                                                name="record[{{ $index }}][noOfBooks]" placeholder="Number of Books"
-                                                value="{{ $book['noOfBooks'] ?? '' }}" required>
-                                        </div>
-                                        <div class="form-group col-md-2 text-end">
-                                            <button type="button" class="btn btn-danger"
-                                                onclick="removeBookEntry(this)">Remove</button>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                    @endif
-                                </div>
-
-                                <button type="button" class="btn btn-info" onclick="addBookEntry()">Add Book</button>
-                            </div>
-                            <button type="submit" class="btn btn-success mt-4">Save</button>
-                        </form>
-                    </div>
-
-                    <script>
-                    function addBookEntry() {
-                        const container = document.querySelector('#booksEntries');
-                        
-                        // Find the highest existing index to avoid conflicts
-                        let maxIndex = -1;
-                        const inputs = container.querySelectorAll('input[name^="record"]');
-                        inputs.forEach(input => {
-                            const match = input.name.match(/record\[(\d+)\]/);
-                            if (match) {
-                                maxIndex = Math.max(maxIndex, parseInt(match[1]));
-                            }
-                        });
-                        const index = maxIndex + 1;
-
-                        const newEntry = `
-            <div class="row mb-2 book-entry" id="bookEntry_${index}">
-                <div class="form-group col-md-6">
-                    <input type="text" class="form-control" name="record[${index}][title]" placeholder="Book Title" required>
-                </div>
-                <div class="form-group col-md-4">
-                    <input type="number" class="form-control" name="record[${index}][noOfBooks]" placeholder="Number of Books" required>
-                </div>
-                <div class="form-group col-md-2 text-end">
-                    <button type="button" class="btn btn-danger" onclick="removeBookEntry(this)">Remove</button>
-                </div>
-            </div>`;
-                        container.insertAdjacentHTML('beforeend', newEntry);
-                    }
-
-                    function removeBookEntry(button) {
-                        button.closest('.book-entry').remove();
-                    }
-                    </script>
-
-                    @endif
-
-
                 </div>
             </div>
         </div>
     </div>
 </div>
 <!-- End Content-->
-
 
 @endsection

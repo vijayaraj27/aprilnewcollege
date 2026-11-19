@@ -38,7 +38,7 @@ class ResearchController extends Controller
             $data['view']   = $this->view;
             $data['path']   = $this->path;
             $data['access'] = $this->access;
-            $data['baseurl'] = config('app.url');
+            $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
 
             $data['research'] = Research::all(); // Example: Fetch all publications.
 
@@ -59,7 +59,7 @@ class ResearchController extends Controller
         $data['view']   = $this->view;
         $data['path']   = $this->path;
         $data['access'] = $this->access;
-        $data['baseurl'] = config('app.url');
+        $data['baseurl'] = rtrim(config('app.url'), '/') . '/';
         $data['departmentId'] = $departmentId;
         $data['section'] = $section;
 

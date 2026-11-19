@@ -94,7 +94,9 @@
                             <div class="s-about-content wow fadeInRight" data-animation="fadeInRight" data-delay=".2s">  
 
                                 <!-- <h2>{{ $page->title }}</h2> -->
-                                <p>{!! $page->description !!}</p>
+                                <div class="page-body-content">
+                                    {!! $page->description !!}
+                                </div>
 
                             </div>
                         </div>

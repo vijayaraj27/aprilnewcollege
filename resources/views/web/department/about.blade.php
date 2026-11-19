@@ -3,15 +3,47 @@
 @section('title', $department->title . ' - About Us')
 
 @section('content')
-<!-- Page Header -->
-<x-web.breadcrumb 
-    :title="$department->title . ' - About Us'"
+{{-- Department home: own slider + compact breadcrumb --}}
+@if(!empty($sliders) && count($sliders) > 0)
+<section id="department-home" class="slider-area fix p-relative">
+    <div class="slider-active" style="background: #141b22;">
+        @foreach($sliders as $slider)
+        <div class="single-slider slider-bg"
+            style="background-image: url({{ asset('uploads/slider/'.$slider->attach) }}); background-size: cover;">
+            <div class="overlay"></div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-7 col-md-7">
+                        <div class="slider-content s-slider-content mt-130">
+                            <h2 data-animation="fadeInUp" data-delay=".4s">{{ $slider->title }}</h2>
+                            @if(!empty($slider->sub_title))
+                            <p data-animation="fadeInUp" data-delay=".6s">{!! strip_tags($slider->sub_title, '<b><u><i><br>') !!}</p>
+                            @endif
+                            @if(!empty($slider->button_link))
+                            <div class="slider-btn mt-30">
+                                <a href="{{ $slider->button_link }}" target="_blank" rel="noopener" class="btn ss-btn mr-15"
+                                    data-animation="fadeInLeft" data-delay=".4s">{{ $slider->button_text }} <i
+                                        class="fal fa-long-arrow-right"></i></a>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</section>
+@endif
+
+<x-web.breadcrumb
+    variant="simple"
+    :title="$department->title"
     :items="[
         ['title' => 'Home', 'url' => url('/')],
-        ['title' => 'Departments', 'url' => url('/departments')],
+        ['title' => 'Departments', 'url' => url('/department')],
         ['title' => $department->title, 'url' => null]
     ]"
-    background="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
 />
 
 <!-- Quick Navigation -->
@@ -21,14 +53,19 @@
             <div class="col-12">
                 <ul class="d-flex flex-wrap listmargin clearfix">
                     <li>
-                        <a class="btn ss-btn mr-10" href="{{ url('/department/' . $department->slug . '/about') }}"> 
-                            <strong>Faculty</strong> 
-                        </a>         
+                        <a class="btn ss-btn mr-10" href="{{ url('/department/' . $department->slug . '/about') }}">
+                            <strong>About</strong>
+                        </a>
                     </li>
                     <li>
-                        <a class="btn ss-btn mr-10" href="{{ url('/department/' . $department->slug . '/infrastructures') }}"> 
-                            <strong>Infrastructure</strong> 
-                        </a> 
+                        <a class="btn ss-btn mr-10" href="{{ url('/department/' . $department->slug . '/faculties') }}">
+                            <strong>Faculty</strong>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="btn ss-btn mr-10" href="{{ url('/department/' . $department->slug . '/infrastructures') }}">
+                            <strong>Infrastructure</strong>
+                        </a>
                     </li>
                     <li>
                         <a class="btn ss-btn mr-10" href="{{ url('/department/' . $department->slug . '/achievements') }}"> 
@@ -94,34 +131,34 @@
 <!-- Department About Section -->
 <section class="py-5 bg-light">
     <div class="container">
-        <div class="row g-4">
-            <!-- Department Images -->
-            @if(!empty($departmentSectionImage) && is_array($departmentSectionImage))
-            <div class="col-lg-6">
-                <div class="department-images">
-                    @foreach($departmentSectionImage as $index => $image)
-                        @if(!empty($image['image_file']))
-                        <div class="image-item mb-4 animate-fade-in-up" style="animation-delay: {{ $index * 0.2 }}s;">
-                            <div class="position-relative overflow-hidden rounded-3 shadow-lg">
-                                <img src="{{ asset('uploads/department/' . $image['image_file']) }}" 
-                                     alt="{{ $image['title'] ?? 'Department Image' }}" 
-                                     class="img-fluid w-100 h-auto department-image">
-                                <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient-dark opacity-0 image-overlay"></div>
-                            </div>
-                            @if(!empty($image['title']))
-                            <div class="image-caption mt-3">
-                                <h5 class="fw-bold text-dark">{{ $image['title'] }}</h5>
-                            </div>
-                            @endif
-                        </div>
-                        @endif
-                    @endforeach
-                </div>
-            </div>
-            @endif
+        @php
+            $aboutImage = null;
+            if (!empty($sectionAbout['image_file'])) {
+                $aboutImageName = $sectionAbout['image_file'];
+                if (\Illuminate\Support\Str::startsWith($aboutImageName, ['http://', 'https://'])) {
+                    $aboutImage = $aboutImageName;
+                } elseif (is_file(public_path('uploads/about-us/' . $aboutImageName))) {
+                    $aboutImage = asset('uploads/about-us/' . $aboutImageName);
+                } elseif (is_file(base_path('uploads/about-us/' . $aboutImageName))) {
+                    $aboutImage = asset('uploads/about-us/' . $aboutImageName);
+                } else {
+                    $aboutImage = asset('uploads/about-us/' . $aboutImageName);
+                }
+            }
 
+            $galleryImages = [];
+            if (!empty($departmentSectionImage) && is_array($departmentSectionImage)) {
+                foreach ($departmentSectionImage as $image) {
+                    if (!empty($image['image_file'])) {
+                        $galleryImages[] = $image;
+                    }
+                }
+            }
+        @endphp
+
+        <div class="row g-4 align-items-start">
             <!-- Department Information -->
-            <div class="col-lg-6">
+            <div class="{{ ($aboutImage || count($galleryImages) > 0) ? 'col-lg-7' : 'col-lg-12' }}">
                 <div class="department-info animate-fade-in-right">
                     @if(!empty($sectionAbout) && is_array($sectionAbout))
                         @if(!empty($sectionAbout['title']))
@@ -129,7 +166,7 @@
                             <i class="fas fa-university me-3"></i>{{ $sectionAbout['title'] }}
                         </h2>
                         @endif
-                        
+
                         @if(!empty($sectionAbout['description']))
                         <div class="department-description mb-4">
                             <div class="card border-0 shadow-sm">
@@ -140,52 +177,40 @@
                         </div>
                         @endif
                     @endif
-
-                  {{--
-                    @if(!empty($vision))
-                    <div class="vision-mission mb-4 animate-slide-up">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body p-4">
-                                <h4 class="sub-title fw-bold text-primary mb-3">
-                                    <i class="fas fa-eye me-2"></i> Vision
-                                </h4>
-                                <p class="text-muted lh-lg">{!! $vision !!}</p>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
-                    <!-- Mission -->
-                    @if(!empty($mission))
-                    <div class="vision-mission mb-4 animate-slide-up">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body p-4">
-                                <h4 class="sub-title fw-bold text-primary mb-3">
-                                    <i class="fas fa-bullseye me-2"></i> Mission
-                                </h4>
-                                <p class="text-muted lh-lg">{!! $mission !!}</p>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
-                    <!-- Core Values -->
-                    @if(!empty($coreValue))
-                    <div class="vision-mission mb-4 animate-slide-up">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body p-4">
-                                <h4 class="sub-title fw-bold text-primary mb-3">
-                                    <i class="fas fa-heart me-2"></i> Core Values
-                                </h4>
-                                <p class="text-muted lh-lg">{!! $coreValue !!}</p>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
-                    --}}
                 </div>
             </div>
+
+            <!-- About / HOD Image -->
+            @if($aboutImage || count($galleryImages) > 0)
+            <div class="col-lg-5">
+                <div class="department-images">
+                    @if($aboutImage)
+                    <div class="image-item mb-4 animate-fade-in-up">
+                        <div class="position-relative overflow-hidden rounded-3 shadow-lg">
+                            <img src="{{ $aboutImage }}"
+                                 alt="{{ $sectionAbout['title'] ?? 'Department About' }}"
+                                 class="img-fluid w-100 h-auto department-image">
+                        </div>
+                    </div>
+                    @endif
+
+                    @foreach($galleryImages as $index => $image)
+                    <div class="image-item mb-4 animate-fade-in-up" style="animation-delay: {{ ($index + 1) * 0.2 }}s;">
+                        <div class="position-relative overflow-hidden rounded-3 shadow-lg">
+                            <img src="{{ asset('uploads/department/' . $image['image_file']) }}"
+                                 alt="{{ $image['title'] ?? 'Department Image' }}"
+                                 class="img-fluid w-100 h-auto department-image">
+                        </div>
+                        @if(!empty($image['title']))
+                        <div class="image-caption mt-3">
+                            <h5 class="fw-bold text-dark">{{ $image['title'] }}</h5>
+                        </div>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </section>
@@ -245,6 +270,95 @@
 
 <section class="py-5 bg-light">
     <div class="container">
+
+        <!-- Upcoming Events & Notifications -->
+        <div class="row align-items-start mb-5 department-events-notifications" style="background: #eff7ff; border-radius: 12px; padding: 2rem 1rem;">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="section-body">
+                    <h3 class="product-title mb-2">Upcoming Events</h3>
+                    <p>Stay updated with the latest events and activities at {{ $department->title ?? 'the department' }}.</p>
+
+                    @if(isset($upcomingEvents) && $upcomingEvents->count() > 0)
+                    <ul class="data-list scroll-list" data-autoscroll>
+                        @foreach($upcomingEvents as $event)
+                        <li>
+                            <div class="event-content d-flex">
+                                <div class="date col-1">
+                                    <strong>{{ optional($event->event_date)->format('d') }}</strong>
+                                    {{ optional($event->event_date)->format('M, Y') }}
+                                </div>
+                                <div class="text pl-10 col-11 align-self-center">
+                                    @php
+                                        $eventUrl = $event->link ?: (!empty($event->attach) ? asset('uploads/upcoming-event/'.$event->attach) : null);
+                                    @endphp
+                                    @if($eventUrl)
+                                        <a href="{{ $eventUrl }}" target="_blank" rel="noopener">
+                                            <span class="lineclamp2">{{ $event->title }}</span>
+                                        </a>
+                                    @else
+                                        <span class="lineclamp2">{{ $event->title }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </li>
+                        @endforeach
+                    </ul>
+                    @else
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i> No upcoming events at the moment.
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="section-body">
+                    <h3 class="product-title mb-2">Notifications</h3>
+                    <p>Important announcements and notifications for students, faculty, and staff.</p>
+
+                    @if(isset($notifications) && $notifications->count() > 0)
+                    <ul class="data-list scroll-list" data-autoscroll>
+                        @foreach($notifications as $notification)
+                        <li>
+                            <div class="event-content d-flex">
+                                <div class="date col-1">
+                                    <strong>{{ optional($notification->notification_date)->format('d') }}</strong>
+                                    {{ optional($notification->notification_date)->format('M, Y') }}
+                                </div>
+                                <div class="text pl-10 col-11 align-self-center">
+                                    @php
+                                        $notificationUrl = $notification->link ?: (!empty($notification->attach) ? asset('uploads/notification-board/'.$notification->attach) : null);
+                                    @endphp
+                                    @if($notificationUrl)
+                                        <a href="{{ $notificationUrl }}" target="_blank" rel="noopener">
+                                            <span class="lineclamp2">
+                                                {{ $notification->title }}
+                                                @if($notification->is_new)
+                                                    <span class="badge badge-danger ml-2">NEW</span>
+                                                @endif
+                                            </span>
+                                        </a>
+                                    @else
+                                        <span class="lineclamp2">
+                                            {{ $notification->title }}
+                                            @if($notification->is_new)
+                                                <span class="badge badge-danger ml-2">NEW</span>
+                                            @endif
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </li>
+                        @endforeach
+                    </ul>
+                    @else
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i> No notifications at the moment.
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
 
         <!-- Programme Educational Objectives -->
         @if(!empty($programmeEducationalObjectives) && is_array($programmeEducationalObjectives))
@@ -424,12 +538,14 @@
                                     <img src="{{ asset('web/img/testimonial/qt-icon.png') }}" alt="img">
                                 </div>
                                 <p>{!! $testimonial->description !!}</p>
-                                <div class="testi-author">
-                                    <img src="{{ asset('uploads/testimonial/'.$testimonial->attach) }}" alt="img">
-                                </div>
-                                <div class="ta-info">
-                                    <h6>{{ $testimonial->name }}</h6>
-                                    <span>{{ $testimonial->designation ?? '' }}</span>
+                                <div class="testi-footer">
+                                    <div class="testi-author">
+                                        <img src="{{ asset('uploads/testimonial/'.$testimonial->attach) }}" alt="{{ $testimonial->name }}">
+                                    </div>
+                                    <div class="ta-info">
+                                        <h6>{{ $testimonial->name }}</h6>
+                                        <span>{{ $testimonial->designation ?? '' }}</span>
+                                    </div>
                                 </div>
                             </div>
                             @endforeach

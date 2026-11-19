@@ -16,16 +16,16 @@
 />
 
 <!-- Main Content with Sidebar -->
-<section class="container-fluid project-detail">
-    
+<section class="container-fluid project-detail dept-layout-section">
+    <div class="row g-3">
         <!-- Main Content -->
-        <div class="col-lg-9 col-md-8">
+        <div class="col-lg-9 col-md-8 min-w-0">
             @yield('main-content')
         </div>
-        
+
         <!-- Right Sidebar Navigation -->
         @include('web.partials.department-navigation')
-   
+    </div>
 </section>
 
 @endsection
@@ -33,6 +33,30 @@
 @push('styles')
 <style>
 /* Custom CSS for Department Layout */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+.dept-layout-section {
+    overflow-x: clip;
+    max-width: 100%;
+}
+.dept-layout-section > .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+.dept-layout-section .min-w-0 {
+    min-width: 0;
+    max-width: 100%;
+}
+.dept-layout-section .section-padding,
+.dept-layout-section .container-fluid {
+    max-width: 100%;
+    overflow-x: clip;
+}
+.dept-layout-section .row > [class*="col-"] {
+    min-width: 0;
+}
 
 /* Gradient Backgrounds */
 .bg-gradient-primary {
