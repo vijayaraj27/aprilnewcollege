@@ -166,7 +166,6 @@ return [
          * Package Service Providers...
          */
         Intervention\Image\ImageServiceProvider::class,
-        Yoeunes\Toastr\ToastrServiceProvider::class,
         Spatie\Permission\PermissionServiceProvider::class,
         Milon\Barcode\BarcodeServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
@@ -238,6 +237,8 @@ return [
         'DNS2D' => Milon\Barcode\Facades\DNS2DFacade::class,
         //Excel
         'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+        // Toast notifications (php-flasher compatibility wrapper)
+        'Toastr' => App\Support\Toastr::class,
     ],
 
 ];

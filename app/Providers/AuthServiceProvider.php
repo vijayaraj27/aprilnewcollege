@@ -23,7 +23,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->registerPolicies();
+        // registerPolicies() is invoked automatically in Laravel 10+
 
         //
         Gate::before(function ($user, $ability) {
